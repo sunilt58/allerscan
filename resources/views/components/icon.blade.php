@@ -1,0 +1,25 @@
+@props(['name' => 'grid'])
+@php($paths = [
+'grid' => 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
+'scan' => 'M8 3H3v5 M16 3h5v5 M3 16v5h5 M21 16v5h-5 M7 8v8 M10 8v8 M14 8v8 M17 8v8',
+'box' => 'm12 3 9 5-9 5-9-5 9-5z M3 8v9l9 5 9-5V8 M12 13v9 M7.5 5.5l9 5',
+'receipt' => 'M6 3h12v18l-3-2-3 2-3-2-3 2V3z M9 7h6 M9 11h6 M9 15h3',
+'settings' => 'M4 7h16 M4 17h16 M8 4v6 M16 14v6',
+'display' => 'M3 4h18v13H3z M8 21h8 M12 17v4',
+'search' => 'M21 21l-6-6 M17 10a7 7 0 1 1-14 0 7 7 0 0 1 14 0',
+'arrow' => 'M5 12h14 M13 6l6 6-6 6',
+'volume' => 'M11 4 6 8H3v8h3l5 4V4z M15 8a6 6 0 0 1 0 8 M18 5a10 10 0 0 1 0 14',
+'shield' => 'm12 3 9 4v5c0 5-9 9-9 9s-9-4-9-9V7l9-4z M8 12l3 3 5-6',
+'logout' => 'M9 4H4v16h5 M9 12h12 M17 8l4 4-4 4',
+'cart' => 'M3 3h2l3 12h11l2-8H6 M9 20h.01 M18 20h.01',
+'camera' => 'M3 7h4l2-3h6l2 3h4v13H3V7z M16 13a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+'check' => 'm5 12 4 4L19 6',
+'bookmark' => 'M6 3h12v18l-6-4-6 4V3z',
+'user' => 'M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M4 21v-2a8 8 0 0 1 16 0v2',
+'phone' => 'M7 2h10a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1 M10 18h4',
+'language' => 'M3 5h12 M9 3v2 M5 5c0 6 6 10 9 10 M13 5C12 11 8 15 3 16 M14 21l4-11 4 11 M16 17h4',
+'info' => 'M12 8h.01 M12 11v5 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
+'download' => 'M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5',
+'plus' => 'M12 5v14 M5 12h14',
+])
+<svg {{ $attributes->merge(['class' => 'icon']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $paths[$name] ?? $paths['grid'] }}"/></svg>
