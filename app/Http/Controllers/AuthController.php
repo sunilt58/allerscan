@@ -12,7 +12,7 @@ class AuthController extends Controller
     {
         $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
         if (! Auth::attempt($credentials)) {
-            throw ValidationException::withMessages(['email' => 'メールアドレスまたはパスワードが違います。 / Incorrect email or password.']);
+            throw ValidationException::withMessages(['email' => __('Incorrect email or password.')]);
         }
         $request->session()->regenerate();
 

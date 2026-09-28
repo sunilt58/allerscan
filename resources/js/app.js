@@ -1,3 +1,13 @@
+// Interface strings come translated from the page (see partials/js-translations.blade.php).
+const translations = JSON.parse(
+    document.getElementById("translations")?.textContent || "{}",
+);
+function t(key, replacements = {}) {
+    let text = translations[key] ?? key;
+    for (const [name, value] of Object.entries(replacements))
+        text = text.replaceAll(`:${name}`, value);
+    return text;
+}
 const preferencesKey = "allerscan-display-preferences";
 const themes = ["forest", "ocean", "midnight"];
 let unsavedPreferences = null;
@@ -44,13 +54,13 @@ function savePreferences(changes) {
         localStorage.setItem(preferencesKey, JSON.stringify(preferences));
         unsavedPreferences = null;
         if (status)
-            status.textContent =
-                "Saved on this browser / このブラウザに保存しました";
+            status.textContent = t("Saved on this browser");
     } catch {
         unsavedPreferences = preferences;
         if (status)
-            status.textContent =
-                "Applied to this window. Browser storage is unavailable. / この画面に適用しました。保存はできません。";
+            status.textContent = t(
+                "Applied to this window. Browser storage is unavailable.",
+            );
     }
     applyPreferences();
 }
@@ -104,11 +114,11 @@ if (voiceSettings && window.speechSynthesis) {
             const lang = select.dataset.voiceSelect;
             const voices = voicesFor(lang);
             const saved = readPreferences().voices?.[lang] || "";
-            select.replaceChildren(new Option("Automatic / 自動", ""));
+            select.replaceChildren(new Option(t("Automatic"), ""));
             for (const voice of voices)
                 select.append(
                     new Option(
-                        `${voice.name}${voice.localService ? "" : " · online"}`,
+                        `${voice.name}${voice.localService ? "" : ` · ${t("online")}`}`,
                         voice.voiceURI,
                     ),
                 );
@@ -195,20 +205,26 @@ function applyShopperPreferences() {
     });
     document.querySelectorAll("[data-allergen-count]").forEach((node) => {
         node.textContent = allergens.length
-            ? `${allergens.length} selected`
-            : "Set your preferences";
+            ? t(":count selected", { count: allergens.length })
+            : t("Set your preferences");
     });
     document.querySelectorAll("[data-allergen-summary]").forEach((node) => {
         node.textContent = allergens.length
-            ? `Highlighting ${allergens.map((item) => item.name_en).join(", ")}. You can change this anytime.`
-            : "Select your allergens to highlight matching ingredients as you explore.";
+            ? t("Highlighting :names. You can change this anytime.", {
+                  names: allergens.map((item) => item.name).join(t(", ")),
+              })
+            : t(
+                  "Select your allergens to highlight matching ingredients as you explore.",
+              );
     });
     document.querySelectorAll("[data-save-product]").forEach((button) => {
         const isSaved = saved.includes(Number(button.dataset.saveProduct));
         button.setAttribute("aria-pressed", String(isSaved));
         const label = button.querySelector("[data-save-label]");
         if (label)
-            label.textContent = isSaved ? "Saved · Remove" : "Save product";
+            label.textContent = isSaved
+                ? t("Saved · Remove")
+                : t("Save product");
     });
     document.querySelectorAll("[data-product-card]").forEach((card) => {
         const matches = card.querySelectorAll(
@@ -217,7 +233,7 @@ function applyShopperPreferences() {
         const node = card.querySelector("[data-card-match]");
         node.hidden = !matches || card.dataset.information !== "recorded";
         node.textContent = matches
-            ? `${matches} of your selected allergens listed`
+            ? t(":count of your selected allergens listed", { count: matches })
             : "";
     });
     const detail = document.querySelector("[data-product-detail]");
@@ -232,24 +248,25 @@ function applyShopperPreferences() {
     const title = panel.querySelector("[data-match-title]");
     const message = panel.querySelector("[data-match-message]");
     if (unknown) {
-        title.textContent = "Allergen information is unconfirmed / 情報未確認";
-        message.textContent =
-            "Your preferences cannot be checked against an unconfirmed record. Check the actual packaging or manufacturer information.";
+        title.textContent = t("Allergen information is unconfirmed");
+        message.textContent = t(
+            "Your preferences cannot be checked against an unconfirmed record. Check the actual packaging or manufacturer information.",
+        );
     } else if (!codes.length) {
-        title.textContent = "Make these details personal.";
-        message.textContent =
-            "Select your allergens in Settings to highlight matches. / 設定でアレルゲンを選択してください。";
+        title.textContent = t("Make these details personal.");
+        message.textContent = t(
+            "Select your allergens in Settings to highlight matches.",
+        );
     } else if (matches.length) {
-        title.textContent =
-            "Selected allergens are listed / 選択したアレルゲンあり";
+        title.textContent = t("Selected allergens are listed");
         message.textContent = matches
-            .map((chip) => `${chip.dataset.nameEn} / ${chip.dataset.nameJa}`)
-            .join(" · ");
+            .map((chip) => chip.dataset.name)
+            .join(t(", "));
     } else {
-        title.textContent =
-            "No selected allergens listed in this record / 記録上の一致なし";
-        message.textContent =
-            "This does not confirm absence. Records may be incomplete; check the actual packaging. / 含まれないことを保証するものではありません。";
+        title.textContent = t("No selected allergens listed in this record");
+        message.textContent = t(
+            "This does not confirm absence. Records may be incomplete; check the actual packaging.",
+        );
     }
 }
 window.addEventListener("preferences-updated", applyShopperPreferences);
@@ -275,21 +292,21 @@ document.addEventListener("click", (event) => {
         });
         toast(
             unsavedPreferences
-                ? "Removed in this window. Browser storage is unavailable."
-                : "Removed from your saved products.",
+                ? t("Removed in this window. Browser storage is unavailable.")
+                : t("Removed from your saved products."),
         );
     } else {
         if (saved.length >= 50) {
             toast(
-                "Your list has 50 products. Remove one before saving another.",
+                t("Your list has 50 products. Remove one before saving another."),
             );
             return;
         }
         savePreferences({ savedProducts: [...saved, id] });
         toast(
             unsavedPreferences
-                ? "Kept in this window only. Browser storage is unavailable."
-                : "Saved for another look. / 商品を保存しました。",
+                ? t("Kept in this window only. Browser storage is unavailable.")
+                : t("Saved for another look."),
         );
     }
     if (savedList) loadSavedProducts();
@@ -325,13 +342,14 @@ async function loadSavedProducts() {
         const panel = document.createElement("div");
         panel.className = "shop-empty";
         const heading = document.createElement("h2");
-        heading.textContent = "Unable to refresh your saved products.";
+        heading.textContent = t("Unable to refresh your saved products.");
         const note = document.createElement("p");
-        note.textContent =
-            "Your saved list is still here. Check your connection and try again.";
+        note.textContent = t(
+            "Your saved list is still here. Check your connection and try again.",
+        );
         const retry = document.createElement("button");
         retry.className = "button secondary";
-        retry.textContent = "Try again";
+        retry.textContent = t("Try again");
         retry.addEventListener("click", loadSavedProducts);
         panel.append(heading, note, retry);
         savedList.replaceChildren(panel);
@@ -358,8 +376,9 @@ function speakMessage(message, lang, voice = null) {
     const status = document.querySelector("[data-speech-status]");
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
         if (status)
-            status.textContent =
-                "Reading aloud isn’t available in this browser.";
+            status.textContent = t(
+                "Reading aloud isn’t available in this browser.",
+            );
         return;
     }
     stopSpeech();
@@ -371,17 +390,16 @@ function speakMessage(message, lang, voice = null) {
     utterance.onend = () => {
         if (currentUtterance === utterance) {
             currentUtterance = null;
-            if (status) status.textContent = "Finished reading.";
+            if (status) status.textContent = t("Finished reading.");
         }
     };
     utterance.onerror = () => {
         if (currentUtterance === utterance && status)
-            status.textContent =
-                "Unable to read aloud. Try another voice in Settings.";
+            status.textContent = t(
+                "Unable to read aloud. Try another voice in Settings.",
+            );
     };
-    if (status)
-        status.textContent =
-            lang === "ja" ? "読み上げ中…" : "Reading product information…";
+    if (status) status.textContent = t("Reading product information…");
     speechTimer = setTimeout(() => speechSynthesis.speak(utterance), 100);
 }
 for (const button of document.querySelectorAll("[data-read-product]")) {
@@ -443,7 +461,7 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
 document.querySelector("[data-stop-speech]")?.addEventListener("click", () => {
     stopSpeech();
     document.querySelector("[data-speech-status]").textContent =
-        "Reading stopped.";
+        t("Reading stopped.");
 });
 
 let scannerControls = null;
@@ -463,12 +481,13 @@ document
         const message = document.getElementById("camera-message");
         const video = document.getElementById("camera-video");
         dialog.showModal();
-        message.textContent = "Starting camera… / カメラを準備しています…";
+        message.textContent = t("Starting camera…");
         const generation = ++cameraGeneration;
         let handled = false;
         if (!navigator.mediaDevices?.getUserMedia) {
-            message.textContent =
-                "Camera access needs HTTPS and a supported browser. You can enter a barcode instead.";
+            message.textContent = t(
+                "Camera access needs HTTPS and a supported browser. You can enter a barcode instead.",
+            );
             return;
         }
         try {
@@ -494,13 +513,13 @@ document
                 return;
             }
             scannerControls = controls;
-            message.textContent =
-                "Hold the product barcode in the frame. / バーコードをカメラに向けてください。";
+            message.textContent = t("Hold the product barcode in the frame.");
         } catch {
             if (generation !== cameraGeneration) return;
             stopCamera();
-            message.textContent =
-                "Camera unavailable. Check permission, or enter the barcode manually. / カメラを利用できません。手入力をご利用ください。";
+            message.textContent = t(
+                "Camera unavailable. Check permission, or enter the barcode manually.",
+            );
         }
     });
 document
@@ -538,18 +557,18 @@ installButton?.addEventListener("click", async () => {
         const result = await installPrompt.userChoice;
         document.querySelector("[data-install-status]").textContent =
             result.outcome === "accepted"
-                ? "Installation requested. Look for AllerScan with your apps."
-                : "You can install later from your browser menu.";
+                ? t("Installation requested. Look for AllerScan with your apps.")
+                : t("You can install later from your browser menu.");
     } catch {
         document.querySelector("[data-install-status]").textContent =
-            "Use your browser menu to install AllerScan.";
+            t("Use your browser menu to install AllerScan.");
     }
     installPrompt = null;
 });
 window.addEventListener("appinstalled", () => {
     if (installButton) installButton.hidden = true;
     const status = document.querySelector("[data-install-status]");
-    if (status) status.textContent = "AllerScan has been installed.";
+    if (status) status.textContent = t("AllerScan has been installed.");
 });
 if ("serviceWorker" in navigator && window.isSecureContext) {
     navigator.serviceWorker.register("/sw.js").catch(() => {

@@ -25,12 +25,12 @@ test("themes synchronize tabs, survive navigation, and preserve voice and access
             }),
         ),
     );
-    await page.getByRole("radio", { name: "Ocean / オーシャン" }).check();
+    await page.getByRole("radio", { name: "Ocean" }).check();
     await expect(companion.locator("html")).toHaveAttribute(
         "data-theme",
         "ocean",
     );
-    await page.getByRole("radio", { name: "Midnight / ミッドナイト" }).check();
+    await page.getByRole("radio", { name: "Midnight" }).check();
     await page
         .getByRole("checkbox", { name: "High contrast", exact: true })
         .check();
@@ -53,7 +53,7 @@ test("themes synchronize tabs, survive navigation, and preserve voice and access
     ).toEqual({ ja: "saved-ja", en: "saved-en" });
     await page.reload();
     await expect(
-        page.getByRole("radio", { name: "Midnight / ミッドナイト" }),
+        page.getByRole("radio", { name: "Midnight" }),
     ).toBeChecked();
     await expect(
         page.getByRole("checkbox", { name: "Milk", exact: false }),
@@ -87,7 +87,7 @@ test("invalid preferences and blocked browser storage recover with an honest sav
     );
     await page.reload();
     await expect(
-        page.getByRole("radio", { name: "Forest / フォレスト" }),
+        page.getByRole("radio", { name: "Forest" }),
     ).toBeChecked();
     await page.evaluate(() =>
         localStorage.setItem(
@@ -102,7 +102,7 @@ test("invalid preferences and blocked browser storage recover with an honest sav
     );
     await page.reload();
     await expect(
-        page.getByRole("radio", { name: "Forest / フォレスト" }),
+        page.getByRole("radio", { name: "Forest" }),
     ).toBeChecked();
     await expect(
         page.getByRole("checkbox", { name: "High contrast", exact: true }),
@@ -117,7 +117,7 @@ test("invalid preferences and blocked browser storage recover with an honest sav
             },
         }),
     );
-    await page.getByRole("radio", { name: "Ocean / オーシャン" }).check();
+    await page.getByRole("radio", { name: "Ocean" }).check();
     await expect(page.locator("[data-preferences-status]")).toContainText(
         "Applied to this window",
     );
@@ -178,10 +178,10 @@ test("chosen voices preview and read actual product information in both language
     });
     await page.goto("/settings");
     await page
-        .getByRole("combobox", { name: "Japanese voice / 日本語の音声" })
+        .getByRole("combobox", { name: "Japanese voice" })
         .selectOption("ja-two");
     await page
-        .getByRole("combobox", { name: "English voice / 英語の音声" })
+        .getByRole("combobox", { name: "English voice" })
         .selectOption("en-two");
     await page.locator('[data-voice-test="ja"]').click();
     await expect
@@ -191,11 +191,11 @@ test("chosen voices preview and read actual product information in both language
     await expect
         .poll(() => page.evaluate(() => window.spoken.at(-1)?.voice))
         .toBe("en-two");
-    await page.getByRole("radio", { name: "Midnight / ミッドナイト" }).check();
+    await page.getByRole("radio", { name: "Midnight" }).check();
     await page.getByRole("checkbox", { name: "Milk", exact: false }).check();
     await page.reload();
     await expect(
-        page.getByRole("combobox", { name: "Japanese voice / 日本語の音声" }),
+        page.getByRole("combobox", { name: "Japanese voice" }),
     ).toHaveValue("ja-two");
     await page.goto("/scan/lookup?barcode=DEMO001");
     await page.getByRole("button", { name: "English", exact: true }).click();

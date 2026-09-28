@@ -18,6 +18,7 @@ The local `.env` uses a dedicated MySQL user with access only to `allerscan_demo
 - Camera barcode scanning via the bundled ZXing library, loaded only when requested. Manual and keyboard-style USB barcode entry also work.
 - Product detail pages with recorded allergen identities, source, date, and fictional-demo flag.
 - Personal allergen selections, highlighted matches, and a saved list of up to 50 products.
+- Japanese (default) and English interface, switched from the header or **Settings → Language** and remembered in a `locale` cookie. Interface text lives in `lang/ja.json` (English source strings are the keys); product and allergen names use their `_ja`/`_en` columns.
 - Japanese/English speech with selectable device voices, preview, and stop controls.
 - Forest, Ocean, and Midnight themes, high contrast, larger text, keyboard access, and mobile navigation.
 - Installable web app manifest, home-screen icons, and an offline reconnect page. Product/allergen responses are not cached by the service worker.

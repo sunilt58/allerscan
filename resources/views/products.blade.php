@@ -1,1 +1,1 @@
-<x-layout title="Product library" eyebrow="CATALOG / 商品管理"><livewire:product-manager/></x-layout>
+<x-layout :title="__('Product library')"><livewire:product-manager/></x-layout>

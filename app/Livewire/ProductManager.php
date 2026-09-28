@@ -76,7 +76,30 @@ class ProductManager extends Component
             $product->allergens()->sync($validated['allergenIds']);
         });
         $this->editing = false;
-        session()->flash('message', '商品を保存しました。 / Product saved.');
+        session()->flash('message', __('Product saved.'));
+    }
+
+    /**
+     * Field names used in validation messages, in the current display language.
+     *
+     * @return array<string, string>
+     */
+    protected function validationAttributes(): array
+    {
+        return [
+            'form.barcode' => __('Barcode'),
+            'form.name_ja' => __('Japanese name'),
+            'form.name_en' => __('English name'),
+            'form.size' => __('Size'),
+            'form.category' => __('Category'),
+            'form.icon' => __('Icon'),
+            'form.information_status' => __('Information status'),
+            'form.source' => __('Source'),
+            'form.verified_at' => __('Checked date'),
+            'form.is_demo' => __('Fictional demo product'),
+            'allergenIds' => __('Allergen information'),
+            'allergenIds.*' => __('Allergen information'),
+        ];
     }
 
     public function toggleActive(int $id): void

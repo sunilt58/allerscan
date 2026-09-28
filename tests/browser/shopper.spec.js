@@ -16,12 +16,12 @@ test("personal allergen highlights and saved products persist across the shopper
     await page.getByRole("checkbox", { name: "Milk", exact: false }).check();
     await page.getByRole("checkbox", { name: "Peanut", exact: false }).check();
     await page.goto("/scan");
-    await page.getByLabel("Product barcode / バーコード").fill("DEMO001");
+    await page.getByLabel("Product barcode").fill("DEMO001");
     await page.getByRole("button", { name: "Look up product" }).click();
     await expect(page.locator("[data-match-title]")).toHaveText(
-        "Selected allergens are listed / 選択したアレルゲンあり",
+        "Selected allergens are listed",
     );
-    await expect(page.locator("[data-match-message]")).toHaveText("Milk / 乳");
+    await expect(page.locator("[data-match-message]")).toHaveText("Milk");
     await page
         .getByRole("button", { name: "Save product", exact: true })
         .click();
@@ -71,7 +71,7 @@ test("search and manual barcode lookup handle missing products and camera denial
             };
     });
     await page.goto("/");
-    await page.getByLabel("Search products / 商品検索").fill("milk");
+    await page.getByLabel("Search products").fill("milk");
     await page.getByRole("button", { name: "Search", exact: true }).click();
     await expect(page.locator("[data-product-card]")).toHaveCount(2);
     await page
@@ -83,7 +83,7 @@ test("search and manual barcode lookup handle missing products and camera denial
         "Milk chocolate",
     );
     await page.goto("/scan");
-    await page.getByLabel("Product barcode / バーコード").fill("MISSING");
+    await page.getByLabel("Product barcode").fill("MISSING");
     await page.getByRole("button", { name: "Look up product" }).click();
     await expect(page.getByRole("alert")).toContainText("Product not found");
     await page.getByRole("button", { name: "Open camera" }).click();
@@ -195,7 +195,7 @@ test("phone layouts support the full app without horizontal scrolling", async ({
     await page
         .getByRole("checkbox", { name: "Larger text", exact: true })
         .check();
-    await page.getByRole("radio", { name: "Midnight / ミッドナイト" }).check();
+    await page.getByRole("radio", { name: "Midnight" }).check();
     await page.setViewportSize({ width: 320, height: 740 });
     for (const path of [
         "/settings",
@@ -224,10 +224,10 @@ test("team catalog editing still opens an accessible form without checkout field
         .getByRole("link", { name: "Manage catalog", exact: true })
         .click();
     await page.getByRole("button", { name: "Add product" }).click();
-    const dialog = page.getByRole("dialog", { name: "Add product / 商品追加" });
+    const dialog = page.getByRole("dialog", { name: "Add product" });
     await expect(dialog).toBeVisible();
     await expect(
-        dialog.getByLabel("Barcode / バーコード", { exact: true }),
+        dialog.getByLabel("Barcode", { exact: true }),
     ).toBeFocused();
     await expect(dialog.getByLabel("Price before tax")).toHaveCount(0);
     await page.getByRole("button", { name: "Close product form" }).click();

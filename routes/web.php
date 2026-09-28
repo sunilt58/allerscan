@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\LanguageController;
 use App\Models\Allergen;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +16,8 @@ Route::middleware('cache.headers:no_store;private')->group(function () {
     Route::view('/privacy', 'privacy')->name('privacy');
     Route::get('/settings', fn () => view('settings', ['allergens' => Allergen::all()]))->name('settings');
 });
+
+Route::get('/language/{locale}', LanguageController::class)->whereIn('locale', config('app.supported_locales'))->name('language');
 
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'auth.login')->name('login');

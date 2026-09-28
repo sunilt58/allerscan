@@ -38,7 +38,7 @@ class CatalogController extends Controller
         $product = Product::where('is_active', true)->where('barcode', $validated['barcode'])->first();
         if (! $product) {
             return redirect()->route('scan')->withInput()->withErrors([
-                'barcode' => 'Product not found in our catalog. Try searching by name. / このバーコードの商品は登録されていません。',
+                'barcode' => __('Product not found in our catalog. Try searching by name.'),
             ]);
         }
 

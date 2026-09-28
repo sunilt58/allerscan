@@ -16,6 +16,16 @@ class CatalogTest extends TestCase
 {
     use RefreshDatabase;
 
+    /**
+     * These tests assert English copy; the Japanese default is covered in LocalizationTest.
+     */
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['app.locale' => 'en']);
+        app()->setLocale('en');
+    }
+
     public static function searches(): array
     {
         return [

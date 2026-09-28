@@ -94,6 +94,31 @@ body.shopper-app {
 .primary-nav .selected {
     font-weight: 650;
 }
+.header-tools {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+.language-switch {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.language-switch:hover {
+    color: var(--green);
+    background: var(--mint);
+}
+.language-switch svg {
+    width: 17px;
+    height: 17px;
+}
 .profile-shortcut {
     display: flex;
     align-items: center;
@@ -1254,6 +1279,11 @@ body.shopper-app {
 .voice-setting p {
     margin: 8px 0;
 }
+.language-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
 .install-instructions {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1382,6 +1412,15 @@ body.shopper-app {
     }
     .site-header {
         padding: 18px 22px;
+    }
+    .header-tools {
+        gap: 10px;
+    }
+    .language-switch {
+        padding: 8px 12px;
+    }
+    .language-switch svg {
+        display: none;
     }
     .shop-brand {
         font-size: 1.5rem;
@@ -1723,6 +1762,10 @@ body.shopper-app {
     }
 }
 @media (max-width: 380px) {
+    /* Settings stays reachable from the bottom navigation. */
+    .profile-shortcut {
+        display: none;
+    }
     .shop-main {
         padding-inline: 16px;
     }
