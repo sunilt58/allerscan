@@ -12,6 +12,7 @@ Route::middleware('cache.headers:no_store;private')->group(function () {
     Route::get('/item/{product}', [CatalogController::class, 'show'])->name('catalog.show');
     Route::view('/saved', 'saved')->name('saved');
     Route::get('/saved/items', [CatalogController::class, 'saved'])->name('saved.items');
+    Route::view('/privacy', 'privacy')->name('privacy');
     Route::get('/settings', fn () => view('settings', ['allergens' => Allergen::all()]))->name('settings');
 });
 

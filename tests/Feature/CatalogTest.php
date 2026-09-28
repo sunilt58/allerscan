@@ -146,9 +146,32 @@ class CatalogTest extends TestCase
     {
         $this->seed();
         $product = Product::firstOrFail();
-        foreach (['/', '/scan', '/saved', '/settings', route('catalog.show', $product)] as $url) {
+        foreach (['/', '/scan', '/saved', '/settings', '/privacy', route('catalog.show', $product)] as $url) {
             $this->get($url)->assertOk()->assertSee('Demo only — not for medical or dietary decisions.');
         }
+    }
+
+    public function test_privacy_page_is_linked_and_shows_contact_only_when_configured(): void
+    {
+        $this->get('/')->assertSee(route('privacy'));
+        $this->get('/privacy')->assertOk()->assertSee('Camera images are not uploaded')->assertDontSee('mailto:');
+        config(['demo.contact_email' => 'team@example.com']);
+        $this->get('/privacy')->assertSee('mailto:team@example.com');
+    }
+
+    public function test_responses_send_security_headers_and_noindex_only_while_enabled(): void
+    {
+        $this->get('/')->assertOk()
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow')
+            ->assertHeaderMissing('Strict-Transport-Security');
+        $this->assertStringContainsString("frame-ancestors 'none'", $this->get('/')->headers->get('Content-Security-Policy'));
+
+        config(['demo.noindex' => false]);
+        $this->app['env'] = 'production';
+        $this->get('https://localhost/')->assertHeaderMissing('X-Robots-Tag')
+            ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
     public function test_japans_mandatory_allergens_exist_without_demo_seeding(): void
