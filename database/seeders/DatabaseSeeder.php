@@ -12,7 +12,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         if (! app()->environment(['local', 'testing'])) {
-            throw new \RuntimeException('Demo data may only be seeded locally or in tests.');
+            if (! config('demo.allow_seed')) {
+                throw new \RuntimeException('Demo data may only be seeded locally or in tests. Set DEMO_ALLOW_SEED=true for a public demo deployment.');
+            }
+            if (config('demo.password') === config('demo.default_password')) {
+                throw new \RuntimeException('Set a new DEMO_PASSWORD before seeding a deployed demo; the default password is published in the README.');
+            }
         }
         $user = User::firstOrNew(['email' => 'demo@allerscan.test']);
         if (! $user->exists) {

@@ -5,7 +5,7 @@ A graduation project for January 2027: a shopper-facing website and installable 
 ## Open on this Mac
 
 1. Start Herd and the MySQL service in DBngin.
-2. Visit **https://allerscan.test**. Browsing does not require an account.
+2. Visit **https://allerscan_demo.test**. Browsing does not require an account.
 3. In **Settings → My allergens**, choose the allergens to highlight.
 4. Explore **Discover**, or open **Scan** and enter `DEMO001`.
 5. Open a product to see its recorded allergens and source, listen in Japanese or English, or save it.
@@ -29,7 +29,7 @@ Preferences and saved product IDs live in this browser's local storage, shared a
 
 This is a PWA, not an App Store/Google Play native app. On a reachable HTTPS deployment, use the browser's Install option; on iPhone/iPad use Safari → Share → Add to Home Screen. Settings includes an Install button when the browser offers installation.
 
-`allerscan.test` is this Mac's local Herd address. A phone needs a reachable HTTPS deployment or appropriately configured local access before it can use or install the app. Public hosting and native app packaging are not included in this local build. Product lookups require an internet/server connection; offline navigation displays a reconnect page rather than old allergen records.
+`allerscan_demo.test` is this Mac's local Herd address. A phone needs a reachable HTTPS deployment or appropriately configured local access before it can use or install the app. Public hosting and native app packaging are not included in this local build. Product lookups require an internet/server connection; offline navigation displays a reconnect page rather than old allergen records.
 
 ## Catalog management
 

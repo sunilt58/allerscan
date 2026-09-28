@@ -4,7 +4,7 @@ export default defineConfig({
     timeout: 30000,
     workers: 1,
     use: {
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || "https://allerscan.test",
+        baseURL: process.env.PLAYWRIGHT_BASE_URL || "https://allerscan_demo.test",
         browserName: "chromium",
         channel: "chrome",
         viewport: { width: 1440, height: 1000 },

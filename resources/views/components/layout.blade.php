@@ -27,6 +27,7 @@
     </nav>
     <a class="profile-shortcut" href="{{ route('settings') }}#allergens"><span class="profile-avatar"><x-icon name="user"/></span><span>My allergens<small data-allergen-count>Set your preferences</small></span><x-icon name="arrow"/></a>
 </header>
+<aside class="demo-notice" aria-label="Safety notice"><x-icon name="info"/><p><strong>Demo only — not for medical or dietary decisions.</strong> Products and allergen records here are fictional or may be incomplete. Always check the actual package label and manufacturer. <span lang="ja">デモ版です。掲載情報は架空または不完全な場合があります。必ず実際の商品表示・メーカー情報をご確認ください。</span></p></aside>
 <main id="main" class="shop-main">{{ $slot }}</main>
 <footer class="shop-footer"><a class="shop-brand" href="{{ route('discover') }}">AllerScan<span class="brand-period">.</span></a><p>More clarity. Every day.<small lang="ja">商品の情報を、もっと身近に。</small></p><div><span>Graduation project · 2027</span>@auth @if(auth()->user()->role === 'admin')<a href="{{ route('products') }}">Manage catalog</a>@endif<form method="POST" action="{{ route('logout') }}">@csrf<button type="submit" class="text-button">Sign out</button></form>@else<a href="{{ route('login') }}">Team sign in</a>@endauth</div></footer>
 <div class="toast" role="status" data-toast hidden></div>

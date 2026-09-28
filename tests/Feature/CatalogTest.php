@@ -6,6 +6,7 @@ use App\Livewire\ProductManager;
 use App\Models\Allergen;
 use App\Models\Product;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -139,5 +140,45 @@ class CatalogTest extends TestCase
         $this->assertFalse($product->fresh()->is_active);
         Livewire::test(ProductManager::class)->call('toggleActive', $product->id)->assertHasNoErrors();
         $this->assertTrue($product->fresh()->is_active);
+    }
+
+    public function test_every_public_page_shows_the_safety_notice(): void
+    {
+        $this->seed();
+        $product = Product::firstOrFail();
+        foreach (['/', '/scan', '/saved', '/settings', route('catalog.show', $product)] as $url) {
+            $this->get($url)->assertOk()->assertSee('Demo only — not for medical or dietary decisions.');
+        }
+    }
+
+    public function test_japans_mandatory_allergens_exist_without_demo_seeding(): void
+    {
+        $this->assertEqualsCanonicalizing(
+            ['shrimp', 'crab', 'walnut', 'wheat', 'buckwheat', 'egg', 'milk', 'peanut'],
+            Allergen::pluck('code')->all(),
+        );
+    }
+
+    public function test_demo_seeding_outside_local_requires_opt_in_and_a_new_password(): void
+    {
+        $this->app['env'] = 'production';
+        config(['demo.allow_seed' => false, 'demo.password' => 'a-new-secret']);
+        $this->assertSeederRefuses('DEMO_ALLOW_SEED');
+        config(['demo.allow_seed' => true, 'demo.password' => config('demo.default_password')]);
+        $this->assertSeederRefuses('DEMO_PASSWORD');
+        $this->assertDatabaseMissing('users', ['email' => 'demo@allerscan.test']);
+        config(['demo.password' => 'a-new-secret']);
+        $this->app->make(DatabaseSeeder::class)->run();
+        $this->assertDatabaseHas('users', ['email' => 'demo@allerscan.test']);
+    }
+
+    private function assertSeederRefuses(string $reason): void
+    {
+        try {
+            $this->app->make(DatabaseSeeder::class)->run();
+            $this->fail('Seeder should have refused to run.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString($reason, $exception->getMessage());
+        }
     }
 }

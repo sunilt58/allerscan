@@ -1,4 +1,4 @@
-how can i login with terminal of vs code step by step<?php
+<?php
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;

@@ -9,6 +9,6 @@ export default defineConfig({
     webServer: undefined,
     use: {
         ...base.use,
-        baseURL: process.env.PLAYWRIGHT_BASE_URL || "https://allerscan.test",
+        baseURL: process.env.PLAYWRIGHT_BASE_URL || "https://allerscan_demo.test",
     },
 });

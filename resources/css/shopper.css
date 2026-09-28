@@ -119,6 +119,36 @@ body.shopper-app {
     width: 42px;
     height: 42px;
 }
+.demo-notice {
+    max-width: 1276px;
+    margin: 16px auto;
+    padding: 12px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-radius: 12px;
+    color: var(--warning-ink);
+    font-size: 0.78rem;
+    line-height: 1.5;
+}
+.demo-notice svg {
+    flex: none;
+    width: 18px;
+    margin-top: 1px;
+}
+.demo-notice p {
+    margin: 0;
+}
+.demo-notice span {
+    display: block;
+}
+@media (max-width: 1316px) {
+    .demo-notice {
+        margin: 16px 20px;
+    }
+}
 .shop-main {
     max-width: 1276px;
     margin: 0 auto;
