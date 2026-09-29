@@ -47,7 +47,9 @@ The ten seeded products and allergen declarations are **fictional**. `DEMO001`�
 
 ## Another developer's machine
 
-Requirements: PHP 8.3+, Composer, Node 24, Herd, and MySQL.
+Requirements: PHP 8.4.1+ (the locked Symfony 8 packages need it), Composer, Node 20.19+ or 22.12+ (Node 24 recommended), MySQL, and a local server — Herd (macOS/Windows) or Laragon (Windows). PHP needs the `pdo_mysql`, `pdo_sqlite`, `sqlite3`, `mbstring`, `intl`, `fileinfo`, `zip`, and `openssl` extensions.
+
+The project folder must be named `allerscan` so the site is served at `https://allerscan.test`, matching `APP_URL`.
 
 ```sh
 composer install
@@ -65,6 +67,29 @@ herd secure allerscan
 ```
 
 Use the Herd URL. `npm run dev` watches frontend edits; `npm run build` produces assets without a continuously running Node process. Do not point tests at an unrelated database.
+
+### Windows with Laragon
+
+1. Laragon's bundled PHP is often older than 8.4. Download the PHP 8.4 **Thread Safe x64** zip from windows.php.net, unzip it into `C:\laragon\bin\php\`, then select it in **Menu → PHP → Version** and enable the extensions listed above in **Menu → PHP → Extensions**. Confirm with `php -v`.
+2. If `node -v` is older than 20.19, install Node 24 LTS from nodejs.org.
+3. In Laragon's Terminal:
+
+    ```powershell
+    cd C:\laragon\www
+    git clone https://github.com/sunilt58/allerscan_demo.git allerscan
+    cd allerscan
+    composer install
+    copy .env.example .env
+    php artisan key:generate
+    npm ci
+    npm run build
+    ```
+
+4. **Start All**, open **Database**, and create `allerscan_demo`. Laragon's MySQL uses `root` with an empty password, which matches `.env.example`. Then run `php artisan migrate --seed`.
+5. The camera requires HTTPS: enable **Menu → Apache → SSL**, add Laragon's certificate to the Windows trust store from the same menu, restart Laragon, and open `https://allerscan.test`.
+6. Run `php artisan test --compact` to confirm the setup.
+
+Each machine has its own database, so catalog entries made on one computer do not appear on another.
 
 ## Code map
 

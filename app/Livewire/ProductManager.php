@@ -65,6 +65,10 @@ class ProductManager extends Component
             'allergenIds' => ['array'],
             'allergenIds.*' => ['integer', 'distinct', 'exists:allergens,id'],
         ]);
+        // Livewire bypasses ConvertEmptyStringsToNull, and MySQL rejects '' for a DATE column.
+        foreach (['source', 'verified_at'] as $optionalField) {
+            $validated['form'][$optionalField] = $validated['form'][$optionalField] ?: null;
+        }
         DB::transaction(function () use ($validated) {
             $product = $this->productId ? Product::lockForUpdate()->findOrFail($this->productId) : new Product;
             if (! $product->exists) {

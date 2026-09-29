@@ -129,6 +129,20 @@ class CatalogTest extends TestCase
         $this->get(route('catalog.show', $product))->assertOk()->assertSee('New demo product');
     }
 
+    public function test_admin_can_add_an_unverified_product_with_blank_evidence_fields(): void
+    {
+        $this->seed();
+        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        Livewire::test(ProductManager::class)->call('edit')
+            ->set('form.barcode', '4901620353247')->set('form.name_ja', '未確認の商品')->set('form.name_en', 'Unverified product')
+            ->set('form.size', '120g')->set('form.information_status', 'unknown')
+            ->set('form.source', '')->set('form.verified_at', '')
+            ->call('save')->assertHasNoErrors();
+        $product = Product::where('barcode', '4901620353247')->firstOrFail();
+        $this->assertNull($product->getRawOriginal('source'));
+        $this->assertNull($product->getRawOriginal('verified_at'));
+    }
+
     public function test_admin_validation_requires_evidence_and_valid_allergen_records(): void
     {
         $this->seed();
