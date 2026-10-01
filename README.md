@@ -24,7 +24,8 @@ The local `.env` uses a dedicated MySQL user with access only to `allerscan` and
 - Japanese/English speech with selectable device voices, preview, and stop controls.
 - Forest, Ocean, and Midnight themes, high contrast, larger text, keyboard access, and mobile navigation.
 - Installable web app manifest, home-screen icons, and an offline reconnect page. Product/allergen responses are not cached by the service worker.
-- Administrator-only catalog create/edit/archive/restore for the team.
+- Suggestion page where signed-in shoppers propose a missing product or allergen and follow what happened to it.
+- A separate team area (`/admin`) with its own layout: catalog create/edit/archive/restore, and a review list for shopper suggestions with a waiting-count badge and notice.
 
 Without an account, allergen selections and saved product IDs live in this browser's local storage and are never sent to the database. With an account they are stored on the server (`allergen_user` and `product_user`) and mirrored into the browser: right after signing in, the browser's lists are merged into the account; after that the account is the source of truth, and signing out clears them from the browser. Theme, text size, and voices always stay in the browser.
 
@@ -38,7 +39,7 @@ This is a PWA, not an App Store/Google Play native app. On a reachable HTTPS dep
 
 ## Catalog management
 
-Sign in, then open **Manage catalog** in the footer. Locally the first team account is:
+Team accounts land in the team area (`/admin/products`) after signing in; from the shopper site, use **Manage catalog** in the footer. Locally the first team account is:
 
 - Email: `admin@allerscan.test`
 - Password: the `ADMIN_PASSWORD` value in your local `.env` (see `.env.example`)
@@ -49,6 +50,15 @@ The seeder creates this account only if absent; changing `ADMIN_PASSWORD` later 
 php artisan allerscan:team teammate@example.com          # grant
 php artisan allerscan:team teammate@example.com --remove # revoke
 ```
+
+## Suggestions
+
+Signed-in shoppers can suggest a product (barcode, names, size, category, allergens seen on the package) or an allergen missing from the list at `/suggest`; a "product not found" scan links there with the barcode filled in. Nothing suggested is public. In **Suggestions**, the team either dismisses a suggestion or:
+
+- **Check and add product** opens the normal product form filled in from the suggestion, with status *Unknown*. Check every field against the package label, then save; the suggestion is marked added only when the product is saved.
+- **Add to allergen list** creates the allergen after the team confirms its code and both names.
+
+Shoppers see *Waiting for review*, *Added*, or *Not added* on their suggestion page. Each account may have 20 suggestions waiting at once, and suggestions are deleted with the account.
 
 ## Product data
 
@@ -109,6 +119,8 @@ Each machine has its own database, so catalog entries made on one computer do no
 - `app/Http/Controllers/CatalogController.php`: search, exact barcode lookup, active product details, and bounded saved-list results.
 - `app/Livewire/ProductManager.php`: admin catalog editing and validation.
 - `app/Http/Controllers/AccountController.php`: registration, synced allergens and saved products, account deletion.
+- `app/Http/Controllers/SuggestionController.php` and `app/Livewire/SuggestionReview.php`: shopper suggestions and the team's review list.
+- `resources/views/components/admin-layout.blade.php` and `resources/css/admin.css`: the team area's layout.
 - `resources/views/`: shopper pages, shared components, settings, and admin management.
 - `resources/js/app.js`: local preferences, highlighting, saved lists, camera, speech, and installation prompt.
 - `resources/css/shopper.css`: consumer layout and responsive design; `themes.css` supplies palettes.
@@ -134,8 +146,8 @@ npm run build
 npm run test:browser
 ```
 
-PHP tests use isolated in-memory SQLite and cover public search/detail routes, missing and archived products, request limits, output escaping, admin authorization, catalog validation, registration, preference sync, and account deletion.
+PHP tests use isolated in-memory SQLite and cover public search/detail routes, missing and archived products, request limits, output escaping, admin authorization, catalog validation, registration, preference sync, account deletion, suggestions, and team-only access.
 
-Browser tests use installed Google Chrome and the running Herd site, and need the local sample records. They do not edit the development catalog; the account test creates one account and deletes it again. Set `PLAYWRIGHT_BASE_URL` to override the URL. They cover allergen highlights, saved-list recovery and synchronization, voice selection using simulated browser voices, themes, phone layouts, camera denial, and service-worker offline behavior. Screenshots are saved under the ignored `storage/app/testing/` directory.
+Browser tests use installed Google Chrome and the running Herd site, and need the local sample records. They do not edit the development catalog; the account and suggestion tests each create one account and delete it again. Set `PLAYWRIGHT_BASE_URL` to override the URL. They cover allergen highlights, saved-list recovery and synchronization, voice selection using simulated browser voices, themes, phone layouts, camera denial, and service-worker offline behavior. Screenshots are saved under the ignored `storage/app/testing/` directory.
 
 Physical camera barcode detection, actual device voices, and installation on real iPhone/Android devices still need device testing. Automated checks simulate denied camera permission and browser speech output.

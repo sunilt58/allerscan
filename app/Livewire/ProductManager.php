@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Allergen;
 use App\Models\Product;
+use App\Models\Suggestion;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -25,6 +26,19 @@ class ProductManager extends Component
 
     public array $allergenIds = [];
 
+    /**
+     * The shopper suggestion this form was opened from, marked approved when the product is saved.
+     */
+    #[Locked]
+    public ?int $suggestionId = null;
+
+    public function mount(): void
+    {
+        if (request()->integer('suggestion') > 0) {
+            $this->reviewSuggestion(request()->integer('suggestion'));
+        }
+    }
+
     public function boot(): void
     {
         abort_unless(auth()->user()?->isAdmin(), 403);
@@ -38,6 +52,7 @@ class ProductManager extends Component
     public function edit(?int $id = null): void
     {
         $this->resetValidation();
+        $this->suggestionId = null;
         $product = $id ? Product::with('allergens')->findOrFail($id) : null;
         $this->productId = $id;
         $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
@@ -47,6 +62,29 @@ class ProductManager extends Component
         ];
         $this->allergenIds = $product ? $product->allergens->pluck('id')->all() : [];
         $this->editing = true;
+    }
+
+    /**
+     * Open the add-product form filled in from a pending suggestion, for the team to check against the label.
+     */
+    public function reviewSuggestion(int $id): void
+    {
+        $suggestion = Suggestion::pending()->where('type', 'product')->find($id);
+        if (! $suggestion) {
+            session()->flash('message', __('That suggestion has already been reviewed.'));
+
+            return;
+        }
+        $this->edit();
+        $this->form = [
+            'barcode' => (string) $suggestion->barcode,
+            'name_ja' => (string) $suggestion->name_ja,
+            'name_en' => (string) $suggestion->name_en,
+            'size' => (string) $suggestion->size,
+            'category' => $suggestion->category ?: 'Food',
+        ] + $this->form;
+        $this->allergenIds = Allergen::whereIn('code', $suggestion->allergen_codes ?? [])->pluck('id')->all();
+        $this->suggestionId = $suggestion->id;
     }
 
     public function save(): void
@@ -78,7 +116,11 @@ class ProductManager extends Component
             $product->fill($validated['form']);
             $product->save();
             $product->allergens()->sync($validated['allergenIds']);
+            if ($this->suggestionId) {
+                Suggestion::pending()->lockForUpdate()->find($this->suggestionId)?->markReviewed('approved', auth()->user(), $product);
+            }
         });
+        $this->suggestionId = null;
         $this->editing = false;
         session()->flash('message', __('Product saved.'));
     }

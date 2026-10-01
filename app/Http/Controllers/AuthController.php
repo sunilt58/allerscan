@@ -18,7 +18,7 @@ class AuthController extends Controller
         $request->session()->regenerate();
 
         // The browser's allergens and saved products are merged into the account on the next page.
-        return redirect()->intended(route('discover'))->with('merge_preferences', true);
+        return redirect()->intended(route($request->user()->isAdmin() ? 'products' : 'discover'))->with('merge_preferences', true);
     }
 
     public function destroy(Request $request): RedirectResponse

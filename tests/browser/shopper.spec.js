@@ -221,9 +221,14 @@ test("team catalog editing still opens an accessible form without checkout field
     await page.getByLabel("Email address").fill("admin@allerscan.test");
     await page.getByLabel("Password").fill("AllerScanDemo2027!");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
-    await page
-        .getByRole("link", { name: "Manage catalog", exact: true })
-        .click();
+    // The team lands in its own area, which has no shopper navigation.
+    await expect(page).toHaveURL(/\/admin\/products$/);
+    await expect(
+        page.getByRole("navigation", { name: "Team navigation" }),
+    ).toBeVisible();
+    await expect(
+        page.getByRole("navigation", { name: "Main navigation" }),
+    ).toHaveCount(0);
     await page.getByRole("button", { name: "Add product" }).click();
     const dialog = page.getByRole("dialog", { name: "Add product" });
     await expect(dialog).toBeVisible();

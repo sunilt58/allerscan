@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -54,6 +55,16 @@ class User extends Authenticatable
     public function savedProducts(): BelongsToMany
     {
         return $this->belongsToMany(Product::class);
+    }
+
+    /**
+     * Products and allergens the shopper asked the team to add.
+     *
+     * @return HasMany<Suggestion, $this>
+     */
+    public function suggestions(): HasMany
+    {
+        return $this->hasMany(Suggestion::class);
     }
 
     /**

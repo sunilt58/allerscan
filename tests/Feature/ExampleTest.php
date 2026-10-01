@@ -24,7 +24,7 @@ class ExampleTest extends TestCase
     {
         $this->seed();
         $this->post('/login', ['email' => 'admin@allerscan.test', 'password' => 'wrong'])->assertSessionHasErrors('email');
-        $this->post('/login', ['email' => 'admin@allerscan.test', 'password' => config('allerscan.admin.password')])->assertRedirect('/');
+        $this->post('/login', ['email' => 'admin@allerscan.test', 'password' => config('allerscan.admin.password')])->assertRedirect('/admin/products');
         $this->assertAuthenticated();
         $this->post('/logout')->assertRedirect('/login');
         $this->assertGuest();

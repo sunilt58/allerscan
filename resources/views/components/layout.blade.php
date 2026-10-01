@@ -39,6 +39,7 @@
 <footer class="shop-footer"><a class="shop-brand" href="{{ route('discover') }}">AllerScan<span class="brand-period">.</span></a><p>{{ __('More clarity. Every day.') }}</p><div>
     <span>© {{ date('Y') }} AllerScan</span>
     <a href="{{ route('privacy') }}">{{ __('Privacy & terms') }}</a>
+    <a href="{{ route('suggest') }}">{{ __('Suggest an addition') }}</a>
     @auth
         @if(auth()->user()->isAdmin())<a href="{{ route('products') }}">{{ __('Manage catalog') }}</a>@endif
         <a href="{{ route('settings') }}#account">{{ __('My account') }}</a>

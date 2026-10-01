@@ -21,5 +21,7 @@
 'info' => 'M12 8h.01 M12 11v5 M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0',
 'download' => 'M12 3v12 m-5-5 5 5 5-5 M4 16v5h16v-5',
 'plus' => 'M12 5v14 M5 12h14',
+'inbox' => 'M3 13h5l1 3h6l1-3h5 M5 5h14l2 8v6H3v-6l2-8z',
+'home' => 'M3 11l9-8 9 8 M5 10v10h14V10 M10 20v-6h4v6',
 ])
 <svg {{ $attributes->merge(['class' => 'icon']) }} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{ $paths[$name] ?? $paths['grid'] }}"/></svg>
