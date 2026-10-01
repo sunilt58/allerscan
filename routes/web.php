@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LanguageController;
@@ -22,12 +23,16 @@ Route::get('/language/{locale}', LanguageController::class)->whereIn('locale', c
 Route::middleware('guest')->group(function () {
     Route::view('/login', 'auth.login')->name('login');
     Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:10,1');
+    Route::view('/register', 'auth.register')->name('register');
+    Route::post('/register', [AccountController::class, 'store'])->middleware('throttle:10,1');
 });
 Route::middleware('auth')->group(function () {
     Route::get('/admin/products', function () {
-        abort_unless(auth()->user()->role === 'admin', 403);
+        abort_unless(auth()->user()->isAdmin(), 403);
 
         return view('products');
     })->name('products');
+    Route::put('/account/preferences', [AccountController::class, 'updatePreferences'])->middleware('throttle:60,1')->name('account.preferences');
+    Route::delete('/account', [AccountController::class, 'destroy'])->middleware('throttle:10,1')->name('account.destroy');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
 });

@@ -11,7 +11,7 @@ class ExampleTest extends TestCase
 
     public function test_shopper_pages_are_public_but_catalog_management_requires_login(): void
     {
-        foreach (['/', '/scan', '/saved', '/settings', '/login'] as $path) {
+        foreach (['/', '/scan', '/saved', '/settings', '/login', '/register'] as $path) {
             $this->get($path)->assertOk();
         }
         $this->get('/admin/products')->assertRedirect('/login');
@@ -20,11 +20,11 @@ class ExampleTest extends TestCase
         }
     }
 
-    public function test_demo_team_can_sign_in_and_sign_out(): void
+    public function test_team_can_sign_in_and_sign_out(): void
     {
         $this->seed();
-        $this->post('/login', ['email' => 'demo@allerscan.test', 'password' => 'wrong'])->assertSessionHasErrors('email');
-        $this->post('/login', ['email' => 'demo@allerscan.test', 'password' => config('demo.password')])->assertRedirect('/');
+        $this->post('/login', ['email' => 'admin@allerscan.test', 'password' => 'wrong'])->assertSessionHasErrors('email');
+        $this->post('/login', ['email' => 'admin@allerscan.test', 'password' => config('allerscan.admin.password')])->assertRedirect('/');
         $this->assertAuthenticated();
         $this->post('/logout')->assertRedirect('/login');
         $this->assertGuest();

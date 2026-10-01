@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 class SecurityHeaders
 {
     /**
-     * Add browser security headers and, while the catalog is a demo, ask search engines not to index it.
+     * Add browser security headers and, until the catalog is ready, ask search engines not to index it.
      *
      * The CSP omits script-src because the layout and Livewire rely on inline scripts.
      *
@@ -29,7 +29,7 @@ class SecurityHeaders
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
 
-        if (config('demo.noindex')) {
+        if (config('allerscan.noindex')) {
             $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
         }
 

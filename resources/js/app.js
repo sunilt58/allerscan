@@ -54,7 +54,9 @@ function savePreferences(changes) {
         localStorage.setItem(preferencesKey, JSON.stringify(preferences));
         unsavedPreferences = null;
         if (status)
-            status.textContent = t("Saved on this browser");
+            status.textContent = accountState
+                ? t("Saved to your account")
+                : t("Saved on this browser");
     } catch {
         unsavedPreferences = preferences;
         if (status)
@@ -63,6 +65,78 @@ function savePreferences(changes) {
             );
     }
     applyPreferences();
+    if (accountState && syncedKeys.some((key) => key in changes))
+        pushAccountPreferences();
+}
+// Signed-in shoppers keep allergens and saved products on their account; this browser mirrors them.
+const accountState = JSON.parse(
+    document.getElementById("account-state")?.textContent || "null",
+);
+const syncedKeys = ["allergens", "savedProducts"];
+function storePreferences(preferences) {
+    try {
+        localStorage.setItem(preferencesKey, JSON.stringify(preferences));
+        unsavedPreferences = null;
+    } catch {
+        unsavedPreferences = preferences;
+    }
+}
+// Sent immediately and kept alive, so a change made just before leaving the page still reaches the account.
+async function pushAccountPreferences() {
+    const preferences = readPreferences();
+    try {
+        const response = await fetch(accountState.url, {
+            method: "PUT",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": document.querySelector(
+                    'meta[name="csrf-token"]',
+                ).content,
+            },
+            body: JSON.stringify({
+                allergens: Array.isArray(preferences.allergens)
+                    ? preferences.allergens
+                    : [],
+                savedProducts: Array.isArray(preferences.savedProducts)
+                    ? preferences.savedProducts
+                          .filter((id) => Number.isSafeInteger(id) && id > 0)
+                          .slice(0, 50)
+                    : [],
+            }),
+            keepalive: true,
+        });
+        if (!response.ok) throw new Error("Account sync failed");
+    } catch {
+        toast(
+            t(
+                "Couldn’t save to your account. Check your connection, then change it again.",
+            ),
+        );
+    }
+}
+if (accountState) {
+    const local = readPreferences();
+    const union = (first, second) => [
+        ...new Set([...first, ...(Array.isArray(second) ? second : [])]),
+    ];
+    // Right after signing in, what this browser already had joins the account; afterwards the account wins.
+    storePreferences({
+        ...local,
+        allergens: accountState.merge
+            ? union(accountState.allergens, local.allergens)
+            : accountState.allergens,
+        savedProducts: accountState.merge
+            ? union(accountState.savedProducts, local.savedProducts).slice(
+                  0,
+                  50,
+              )
+            : accountState.savedProducts,
+    });
+    if (accountState.merge) pushAccountPreferences();
+} else if (document.getElementById("account-signed-out")) {
+    const { allergens, savedProducts, ...kept } = readPreferences();
+    storePreferences(kept);
 }
 applyPreferences();
 window.addEventListener("storage", (event) => {
@@ -298,7 +372,9 @@ document.addEventListener("click", (event) => {
     } else {
         if (saved.length >= 50) {
             toast(
-                t("Your list has 50 products. Remove one before saving another."),
+                t(
+                    "Your list has 50 products. Remove one before saving another.",
+                ),
             );
             return;
         }
@@ -416,11 +492,11 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
             .filter((chip) => chip.classList.contains("is-match"))
             .map((chip) => (isJa ? chip.dataset.nameJa : chip.dataset.nameEn));
         const parts = [isJa ? detail.dataset.nameJa : detail.dataset.nameEn];
-        if (detail.dataset.demo === "true")
+        if (detail.dataset.sample === "true")
             parts.push(
                 isJa
-                    ? "架空のデモ商品です。"
-                    : "This is a fictional demo product.",
+                    ? "これはサンプルの記録で、実際の商品表示ではありません。"
+                    : "This is a sample record, not real label information.",
             );
         if (unknown)
             parts.push(
@@ -557,11 +633,14 @@ installButton?.addEventListener("click", async () => {
         const result = await installPrompt.userChoice;
         document.querySelector("[data-install-status]").textContent =
             result.outcome === "accepted"
-                ? t("Installation requested. Look for AllerScan with your apps.")
+                ? t(
+                      "Installation requested. Look for AllerScan with your apps.",
+                  )
                 : t("You can install later from your browser menu.");
     } catch {
-        document.querySelector("[data-install-status]").textContent =
-            t("Use your browser menu to install AllerScan.");
+        document.querySelector("[data-install-status]").textContent = t(
+            "Use your browser menu to install AllerScan.",
+        );
     }
     installPrompt = null;
 });

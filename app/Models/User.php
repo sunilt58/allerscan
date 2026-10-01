@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -27,6 +28,44 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+        ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Allergens the shopper wants highlighted.
+     *
+     * @return BelongsToMany<Allergen, $this>
+     */
+    public function allergens(): BelongsToMany
+    {
+        return $this->belongsToMany(Allergen::class);
+    }
+
+    /**
+     * Products the shopper saved to come back to.
+     *
+     * @return BelongsToMany<Product, $this>
+     */
+    public function savedProducts(): BelongsToMany
+    {
+        return $this->belongsToMany(Product::class);
+    }
+
+    /**
+     * The synced preferences in the shape the browser stores them.
+     *
+     * @return array{allergens: list<string>, savedProducts: list<int>}
+     */
+    public function shopperPreferences(): array
+    {
+        return [
+            'allergens' => $this->allergens()->orderBy('allergens.id')->pluck('code')->all(),
+            'savedProducts' => $this->savedProducts()->orderBy('products.id')->pluck('products.id')->all(),
         ];
     }
 }

@@ -144,7 +144,7 @@ body.shopper-app {
     width: 42px;
     height: 42px;
 }
-.demo-notice {
+.safety-notice {
     max-width: 1276px;
     margin: 16px auto;
     padding: 12px 18px;
@@ -158,19 +158,19 @@ body.shopper-app {
     font-size: 0.78rem;
     line-height: 1.5;
 }
-.demo-notice svg {
+.safety-notice svg {
     flex: none;
     width: 18px;
     margin-top: 1px;
 }
-.demo-notice p {
+.safety-notice p {
     margin: 0;
 }
-.demo-notice span {
+.safety-notice span {
     display: block;
 }
 @media (max-width: 1316px) {
-    .demo-notice {
+    .safety-notice {
         margin: 16px 20px;
     }
 }
@@ -501,7 +501,7 @@ body.shopper-app {
 .shop-product:hover .product-emoji {
     transform: rotate(0);
 }
-.demo-label {
+.sample-label {
     position: absolute;
     top: 14px;
     left: 14px;
@@ -835,17 +835,6 @@ body.shopper-app {
 .manual-panel .small {
     font-size: 0.74rem;
 }
-.demo-try {
-    padding: 22px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--surface);
-    margin: 25px 0;
-}
-.demo-try h3 {
-    font-size: 1rem;
-    margin: 17px 0 7px;
-}
 .camera-dialog {
     width: min(560px, 92vw);
     border: 1px solid var(--line);
@@ -902,7 +891,7 @@ body.shopper-app {
     color: var(--muted);
     font-size: 1rem;
 }
-.detail-art .demo-label {
+.detail-art .sample-label {
     top: 22px;
     left: 22px;
 }
@@ -1300,26 +1289,77 @@ body.shopper-app {
     font-size: 0.77rem;
     margin: 10px 0 0;
 }
-.team-login {
+.auth-panel {
     max-width: 440px;
     margin: 70px auto 90px;
 }
-.team-login h1 {
+.auth-panel h1 {
     font-size: 3rem;
     font-weight: 500;
     margin: 12px 0;
 }
-.team-login p {
+.auth-panel p {
     font-size: 0.9rem;
     color: var(--muted);
 }
-.team-login label {
+.auth-panel label {
     display: block;
     margin: 23px 0 8px;
     font-size: 0.8rem;
 }
-.team-login form .button {
+.auth-panel form .button {
     margin: 28px 0;
+}
+.auth-panel .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.5;
+}
+.auth-panel .checkbox-label input {
+    flex: none;
+    width: auto;
+    margin-top: 3px;
+}
+.auth-panel .error-text {
+    margin: 8px 0 0;
+}
+.account-notice {
+    margin: 0 0 24px;
+}
+.account-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 20px;
+}
+.delete-account {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+}
+.delete-account summary {
+    cursor: pointer;
+    color: var(--muted);
+}
+.delete-account label {
+    display: block;
+    margin: 16px 0 8px;
+}
+.delete-account input {
+    max-width: 320px;
+}
+.delete-account .button {
+    margin-top: 16px;
+}
+.button.danger {
+    background: #a8322d;
+    border-color: #a8322d;
+    color: #fff;
+}
+.button.danger:hover {
+    background: #8a2823;
 }
 .shopper-app .content-page {
     padding: 40px 0;
@@ -1555,7 +1595,7 @@ body.shopper-app {
     .product-emoji {
         font-size: 3.6rem;
     }
-    .demo-label {
+    .sample-label {
         top: 11px;
         left: 9px;
         font-size: 0.43rem;
@@ -1745,7 +1785,7 @@ body.shopper-app {
     .shopper-app .toast {
         bottom: 100px;
     }
-    .team-login {
+    .auth-panel {
         margin: 48px auto;
     }
     .shopper-app .content-page {

@@ -204,7 +204,7 @@ test("chosen voices preview and read actual product information in both language
         .toBe("en-two");
     const en = await page.evaluate(() => window.spoken.at(-1).text);
     expect(en).toContain("Everyday milk");
-    expect(en).toContain("fictional demo product");
+    expect(en).toContain("sample record, not real label information");
     expect(en).toContain("Matches your selected allergens: Milk");
     expect(en).toContain("does not mean allergen-free");
     await page.getByRole("button", { name: "日本語", exact: true }).click();

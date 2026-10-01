@@ -11,25 +11,22 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        if (! app()->environment(['local', 'testing'])) {
-            if (! config('demo.allow_seed')) {
-                throw new \RuntimeException('Demo data may only be seeded locally or in tests. Set DEMO_ALLOW_SEED=true for a public demo deployment.');
-            }
-            if (config('demo.password') === config('demo.default_password')) {
-                throw new \RuntimeException('Set a new DEMO_PASSWORD before seeding a deployed demo; the default password is published in the README.');
-            }
+        $admin = config('allerscan.admin');
+        $isLocal = app()->environment(['local', 'testing']);
+        if (! $isLocal && (blank($admin['password']) || $admin['password'] === $admin['default_password'])) {
+            throw new \RuntimeException('Set a new ADMIN_PASSWORD before seeding a deployed site; the default password is published in the repository.');
         }
-        $user = User::firstOrNew(['email' => 'demo@allerscan.test']);
+        $user = User::firstOrNew(['email' => $admin['email']]);
         if (! $user->exists) {
-            $user->name = 'Demo staff';
-            $user->password = config('demo.password');
+            $user->name = 'AllerScan team';
+            $user->password = $admin['password'];
             $user->role = 'admin';
             $user->save();
         }
-        foreach ([['milk', '乳', 'Milk'], ['wheat', '小麦', 'Wheat'], ['egg', '卵', 'Egg'], ['soy', '大豆', 'Soy'], ['peanut', '落花生', 'Peanut'], ['shrimp', 'えび', 'Shrimp'], ['walnut', 'くるみ', 'Walnut'], ['sesame', 'ごま', 'Sesame'], ['cashew', 'カシューナッツ', 'Cashew']] as [$code, $ja, $en]) {
-            Allergen::firstOrCreate(['code' => $code], ['name_ja' => $ja, 'name_en' => $en]);
+        if (! $isLocal) {
+            return;
         }
-        // Fictional products and declarations; these are not real label information.
+        // Sample products for development and tests only; these are not real label information.
         $samples = [
             ['DEMO001', 'まいにちミルク', 'Everyday milk', '500 ml', 'Drinks', '🥛', 180, ['milk']],
             ['DEMO002', 'ふんわり食パン', 'Soft white bread', '6 slices', 'Food', '🍞', 240, ['wheat', 'milk', 'egg']],
@@ -47,7 +44,7 @@ class DatabaseSeeder extends Seeder
                 'name_ja' => $ja, 'name_en' => $en, 'size' => $size, 'category' => $category, 'icon' => $icon,
                 'price' => $price, 'tax_rate' => $category === 'Daily' ? 10 : 8, 'is_demo' => true,
                 'information_status' => $codes === null ? 'unknown' : 'recorded',
-                'source' => 'Fictional graduation demo — not a real product label',
+                'source' => 'Sample record — not a real product label',
                 'verified_at' => $codes === null ? null : now()->toDateString(),
             ]);
             if ($product->wasRecentlyCreated) {

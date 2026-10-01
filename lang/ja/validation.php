@@ -5,22 +5,28 @@
  * Rules not listed here fall back to Laravel's English messages.
  */
 return [
+    'accepted' => ':attributeが必要です。',
     'array' => ':attributeは配列で指定してください。',
     'before_or_equal' => ':attributeには:date以前の日付を指定してください。',
     'boolean' => ':attributeははい・いいえで指定してください。',
+    'confirmed' => ':attributeが確認用の入力と一致しません。',
+    'current_password' => 'パスワードが正しくありません。',
     'date' => ':attributeには正しい日付を指定してください。',
     'distinct' => ':attributeに重複した値があります。',
     'email' => ':attributeには正しいメールアドレスを入力してください。',
     'exists' => '選択された:attributeは正しくありません。',
     'in' => '選択された:attributeは正しくありません。',
     'integer' => ':attributeは整数で指定してください。',
+    'lowercase' => ':attributeは小文字で入力してください。',
     'max' => [
         'array' => ':attributeは:max個以下で指定してください。',
         'string' => ':attributeは:max文字以内で入力してください。',
     ],
     'min' => [
         'numeric' => ':attributeは:min以上で指定してください。',
+        'string' => ':attributeは:min文字以上で入力してください。',
     ],
+    'present' => ':attributeが必要です。',
     'regex' => ':attributeの形式が正しくありません。',
     'required' => ':attributeを入力してください。',
     'required_if' => ':otherが:valueの場合、:attributeを入力してください。',
@@ -36,8 +42,10 @@ return [
     'attributes' => [
         'barcode' => 'バーコード',
         'category' => '分類',
+        'consent' => '同意',
         'email' => 'メールアドレス',
         'ids' => '保存した商品',
+        'name' => 'お名前',
         'password' => 'パスワード',
         'q' => '検索語',
     ],

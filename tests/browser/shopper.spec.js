@@ -94,7 +94,8 @@ test("search and manual barcode lookup handle missing products and camera denial
         .getByRole("button", { name: "Close camera", exact: true })
         .click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
-    await page.getByRole("link", { name: "Try DEMO001" }).click();
+    await page.getByLabel("Product barcode").fill("DEMO001");
+    await page.getByRole("button", { name: "Look up product" }).click();
     await expect(
         page.getByRole("heading", { name: "Everyday milk", exact: true }),
     ).toBeVisible();
@@ -217,7 +218,7 @@ test("team catalog editing still opens an accessible form without checkout field
     page,
 }) => {
     await page.goto("/login");
-    await page.getByLabel("Email address").fill("demo@allerscan.test");
+    await page.getByLabel("Email address").fill("admin@allerscan.test");
     await page.getByLabel("Password").fill("AllerScanDemo2027!");
     await page.getByRole("button", { name: "Sign in", exact: true }).click();
     await page

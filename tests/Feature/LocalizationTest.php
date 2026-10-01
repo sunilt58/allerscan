@@ -20,7 +20,7 @@ class LocalizationTest extends TestCase
 
         $this->get('/')->assertOk()
             ->assertSee('<html lang="ja">', false)
-            ->assertSee('デモ版です — 医療・食事の判断には使用しないでください。')
+            ->assertSee('医療・食事の助言ではありません。')
             ->assertSeeInOrder(['<h3>まいにちミルク</h3>', 'Everyday milk'], false)
             ->assertSee('"Save product":'.json_encode('商品を保存'), false)
             ->assertSee(route('language', 'en'));
@@ -59,7 +59,7 @@ class LocalizationTest extends TestCase
         ]);
 
         app()->setLocale('ja');
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         Livewire::test(ProductManager::class)->call('edit')->set('form.barcode', '')->call('save')
             ->assertHasErrors(['form.barcode' => 'バーコードを入力してください。']);
     }

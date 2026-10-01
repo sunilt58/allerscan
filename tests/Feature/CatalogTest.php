@@ -77,7 +77,7 @@ class CatalogTest extends TestCase
         $milk = Product::where('barcode', 'DEMO001')->firstOrFail();
         $salad = Product::where('barcode', 'DEMO009')->firstOrFail();
         $this->get(route('catalog.show', $milk))->assertOk()->assertSee('Milk')->assertSee('乳')
-            ->assertSee('Fictional graduation demo')->assertHeader('Cache-Control', 'no-store, private');
+            ->assertSee('Sample record — not real label information')->assertHeader('Cache-Control', 'no-store, private');
         $this->get(route('catalog.show', $salad))->assertOk()->assertSee('Information unconfirmed')->assertDontSee('None recorded');
     }
 
@@ -110,14 +110,14 @@ class CatalogTest extends TestCase
         $this->actingAs(User::factory()->create());
         $this->get('/admin/products')->assertForbidden();
         Livewire::test(ProductManager::class)->assertForbidden();
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         $this->get('/admin/products')->assertOk()->assertSee('Product catalog');
     }
 
     public function test_admin_can_add_a_catalog_product_without_any_payment_fields(): void
     {
         $this->seed();
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         $allergen = Allergen::where('code', 'milk')->firstOrFail();
         Livewire::test(ProductManager::class)->call('edit')
             ->set('form.barcode', 'DEMO-NEW')->set('form.name_ja', '新しい商品')->set('form.name_en', 'New demo product')
@@ -132,7 +132,7 @@ class CatalogTest extends TestCase
     public function test_admin_can_add_an_unverified_product_with_blank_evidence_fields(): void
     {
         $this->seed();
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         Livewire::test(ProductManager::class)->call('edit')
             ->set('form.barcode', '4901620353247')->set('form.name_ja', '未確認の商品')->set('form.name_en', 'Unverified product')
             ->set('form.size', '120g')->set('form.information_status', 'unknown')
@@ -146,7 +146,7 @@ class CatalogTest extends TestCase
     public function test_admin_validation_requires_evidence_and_valid_allergen_records(): void
     {
         $this->seed();
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         $product = Product::where('barcode', 'DEMO001')->firstOrFail();
         Livewire::test(ProductManager::class)->call('edit', $product->id)->set('form.source', '')->call('save')->assertHasErrors('form.source');
         Livewire::test(ProductManager::class)->call('edit', $product->id)->set('form.verified_at', '')->call('save')->assertHasErrors('form.verified_at');
@@ -158,7 +158,7 @@ class CatalogTest extends TestCase
     public function test_admin_can_archive_and_restore_a_product(): void
     {
         $this->seed();
-        $this->actingAs(User::where('email', 'demo@allerscan.test')->firstOrFail());
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         $product = Product::firstOrFail();
         Livewire::test(ProductManager::class)->call('toggleActive', $product->id)->assertHasNoErrors();
         $this->assertFalse($product->fresh()->is_active);
@@ -171,7 +171,7 @@ class CatalogTest extends TestCase
         $this->seed();
         $product = Product::firstOrFail();
         foreach (['/', '/scan', '/saved', '/settings', '/privacy', route('catalog.show', $product)] as $url) {
-            $this->get($url)->assertOk()->assertSee('Demo only — not for medical or dietary decisions.');
+            $this->get($url)->assertOk()->assertSee('Not medical or dietary advice.');
         }
     }
 
@@ -179,7 +179,7 @@ class CatalogTest extends TestCase
     {
         $this->get('/')->assertSee(route('privacy'));
         $this->get('/privacy')->assertOk()->assertSee('Camera images are not uploaded')->assertDontSee('mailto:');
-        config(['demo.contact_email' => 'team@example.com']);
+        config(['allerscan.contact_email' => 'team@example.com']);
         $this->get('/privacy')->assertSee('mailto:team@example.com');
     }
 
@@ -192,31 +192,43 @@ class CatalogTest extends TestCase
             ->assertHeaderMissing('Strict-Transport-Security');
         $this->assertStringContainsString("frame-ancestors 'none'", $this->get('/')->headers->get('Content-Security-Policy'));
 
-        config(['demo.noindex' => false]);
+        config(['allerscan.noindex' => false]);
         $this->app['env'] = 'production';
         $this->get('https://localhost/')->assertHeaderMissing('X-Robots-Tag')
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
-    public function test_japans_mandatory_allergens_exist_without_demo_seeding(): void
+    public function test_japans_labeling_allergens_exist_without_seeding(): void
     {
-        $this->assertEqualsCanonicalizing(
-            ['shrimp', 'crab', 'walnut', 'wheat', 'buckwheat', 'egg', 'milk', 'peanut'],
-            Allergen::pluck('code')->all(),
-        );
+        $codes = Allergen::pluck('code')->all();
+        foreach (['shrimp', 'crab', 'walnut', 'wheat', 'buckwheat', 'egg', 'milk', 'peanut', 'soy', 'sesame', 'almond', 'gelatin'] as $code) {
+            $this->assertContains($code, $codes);
+        }
+        $this->assertCount(29, $codes);
     }
 
-    public function test_demo_seeding_outside_local_requires_opt_in_and_a_new_password(): void
+    public function test_seeding_a_deployed_site_requires_a_new_password_and_adds_no_sample_products(): void
     {
         $this->app['env'] = 'production';
-        config(['demo.allow_seed' => false, 'demo.password' => 'a-new-secret']);
-        $this->assertSeederRefuses('DEMO_ALLOW_SEED');
-        config(['demo.allow_seed' => true, 'demo.password' => config('demo.default_password')]);
-        $this->assertSeederRefuses('DEMO_PASSWORD');
-        $this->assertDatabaseMissing('users', ['email' => 'demo@allerscan.test']);
-        config(['demo.password' => 'a-new-secret']);
+        config(['allerscan.admin.email' => 'owner@example.com']);
+        $this->assertSeederRefuses('ADMIN_PASSWORD');
+        $this->assertDatabaseMissing('users', ['email' => 'owner@example.com']);
+        config(['allerscan.admin.password' => 'a-new-secret']);
         $this->app->make(DatabaseSeeder::class)->run();
-        $this->assertDatabaseHas('users', ['email' => 'demo@allerscan.test']);
+        $this->assertDatabaseHas('users', ['email' => 'owner@example.com', 'role' => 'admin']);
+        $this->assertSame(0, Product::count());
+    }
+
+    public function test_new_catalog_entries_are_real_records_unless_marked_as_samples(): void
+    {
+        $this->seed();
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        Livewire::test(ProductManager::class)->call('edit')
+            ->set('form.barcode', '4901234567894')->set('form.name_ja', '本物の商品')->set('form.name_en', 'Real product')
+            ->set('form.size', '100g')->call('save')->assertHasNoErrors();
+        $product = Product::where('barcode', '4901234567894')->firstOrFail();
+        $this->assertFalse($product->is_demo);
+        $this->get(route('catalog.show', $product))->assertOk()->assertDontSee('SAMPLE RECORD')->assertSee('Catalog entry');
     }
 
     private function assertSeederRefuses(string $reason): void

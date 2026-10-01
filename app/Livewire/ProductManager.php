@@ -27,7 +27,7 @@ class ProductManager extends Component
 
     public function boot(): void
     {
-        abort_unless(auth()->user()?->role === 'admin', 403);
+        abort_unless(auth()->user()?->isAdmin(), 403);
     }
 
     public function updatedSearch(): void
@@ -43,7 +43,7 @@ class ProductManager extends Component
         $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
             'barcode' => '', 'name_ja' => '', 'name_en' => '', 'size' => '', 'category' => 'Food',
             'icon' => '📦', 'information_status' => 'unknown',
-            'source' => '', 'verified_at' => '', 'is_demo' => true,
+            'source' => '', 'verified_at' => '', 'is_demo' => false,
         ];
         $this->allergenIds = $product ? $product->allergens->pluck('id')->all() : [];
         $this->editing = true;
@@ -100,7 +100,7 @@ class ProductManager extends Component
             'form.information_status' => __('Information status'),
             'form.source' => __('Source'),
             'form.verified_at' => __('Checked date'),
-            'form.is_demo' => __('Fictional demo product'),
+            'form.is_demo' => __('Sample record'),
             'allergenIds' => __('Allergen information'),
             'allergenIds.*' => __('Allergen information'),
         ];
