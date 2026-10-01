@@ -10,7 +10,7 @@ A graduation project for January 2027: a shopper-facing website and installable 
 4. Explore **Discover**, or open **Scan** and enter `DEMO001`.
 5. Open a product to see its recorded allergens and source, listen in Japanese or English, or save it.
 
-The local `.env` uses a dedicated MySQL user with access only to `allerscan_demo` and is ignored by Git. No existing database records were deleted during the redesign. Historical POS tables remain unused; checkout and customer-display routes have been retired.
+The local `.env` uses a dedicated MySQL user with access only to `allerscan` and is ignored by Git. No existing database records were deleted during the redesign. Historical POS tables remain unused; checkout and customer-display routes have been retired.
 
 ## Features
 
@@ -59,7 +59,7 @@ npm ci
 npm run build
 ```
 
-Create an empty dedicated MySQL database named `allerscan_demo`, configure credentials in `.env`, and then run:
+Create an empty dedicated MySQL database named `allerscan`, configure credentials in `.env`, and then run:
 
 ```sh
 php artisan migrate --seed
@@ -76,7 +76,7 @@ Use the Herd URL. `npm run dev` watches frontend edits; `npm run build` produces
 
     ```powershell
     cd C:\laragon\www
-    git clone https://github.com/sunilt58/allerscan_demo.git allerscan
+    git clone https://github.com/sunilt58/allerscan.git allerscan
     cd allerscan
     composer install
     copy .env.example .env
@@ -85,7 +85,7 @@ Use the Herd URL. `npm run dev` watches frontend edits; `npm run build` produces
     npm run build
     ```
 
-4. **Start All**, open **Database**, and create `allerscan_demo`. Laragon's MySQL uses `root` with an empty password, which matches `.env.example`. Then run `php artisan migrate --seed`.
+4. **Start All**, open **Database**, and create `allerscan`. Laragon's MySQL uses `root` with an empty password, which matches `.env.example`. Then run `php artisan migrate --seed`.
 5. The camera requires HTTPS: enable **Menu → Apache → SSL**, add Laragon's certificate to the Windows trust store from the same menu, restart Laragon, and open `https://allerscan.test`.
 6. Run `php artisan test --compact` to confirm the setup.
 
