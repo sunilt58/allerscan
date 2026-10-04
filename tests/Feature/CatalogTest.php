@@ -155,6 +155,34 @@ class CatalogTest extends TestCase
         $this->assertSame('DEMO001', $product->fresh()->barcode);
     }
 
+    public function test_an_unregistered_scan_leads_the_team_to_a_prefilled_new_product(): void
+    {
+        $this->seed();
+        $this->from('/scan')->get('/scan/lookup?barcode=4900000000001')->assertRedirect('/scan');
+        $this->get('/scan')->assertSee('Suggest this product to our team')->assertDontSee('Register this product');
+
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        $this->from('/scan')->get('/scan/lookup?barcode=4900000000001');
+        $this->get('/scan')->assertSee('Register this product')->assertSee(route('products', ['barcode' => '4900000000001']), false);
+        $this->get('/admin/products?barcode=4900000000001')->assertOk()->assertSee('This barcode is not registered yet.');
+        Livewire::withQueryParams(['barcode' => '4900000000001'])->test(ProductManager::class)
+            ->assertSet('editing', true)->assertSet('productId', null)->assertSet('form.barcode', '4900000000001')
+            ->assertSet('form.information_status', 'unknown');
+    }
+
+    public function test_a_registered_or_archived_barcode_opens_that_product_and_bad_input_is_ignored(): void
+    {
+        $this->seed();
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        $milk = Product::where('barcode', 'DEMO001')->firstOrFail();
+        Livewire::withQueryParams(['barcode' => 'DEMO001'])->test(ProductManager::class)
+            ->assertSet('productId', $milk->id)->assertSet('form.name_en', 'Everyday milk')->assertSee('already registered');
+        $milk->update(['is_active' => false]);
+        Livewire::withQueryParams(['barcode' => 'DEMO001'])->test(ProductManager::class)
+            ->assertSet('productId', $milk->id)->assertSee('archived product');
+        Livewire::withQueryParams(['barcode' => '<script>'])->test(ProductManager::class)->assertSet('editing', false);
+    }
+
     public function test_admin_can_archive_and_restore_a_product(): void
     {
         $this->seed();

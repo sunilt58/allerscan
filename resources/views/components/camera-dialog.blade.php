@@ -1,0 +1,2 @@
+{{-- Shared barcode camera. A [data-camera-open] button names the input and form the scanned code goes to (resources/js/app.js). --}}
+<dialog id="camera-dialog" class="camera-dialog"><div class="dialog-heading"><h2>{{ __('Scan barcode') }}</h2><button type="button" class="icon-button" data-camera-close aria-label="{{ __('Close camera') }}">×</button></div><video id="camera-video" playsinline muted></video><p id="camera-message" role="status"></p><button type="button" class="button secondary" data-camera-close>{{ __('Enter barcode instead') }}</button></dialog>

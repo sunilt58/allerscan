@@ -45,7 +45,28 @@ class ProductManager extends Component
     {
         if (request()->integer('suggestion') > 0) {
             $this->reviewSuggestion(request()->integer('suggestion'));
+        } elseif (preg_match('/^[A-Za-z0-9-]{1,50}$/', (string) request()->query('barcode'))) {
+            $this->openBarcode(request()->query('barcode'));
         }
+    }
+
+    /**
+     * A scanned or typed barcode opens its product, including an archived one, or a new product form for it.
+     */
+    public function openBarcode(string $barcode): void
+    {
+        $product = Product::where('barcode', $barcode)->first();
+        if ($product) {
+            $this->edit($product->id);
+            session()->flash('message', $product->is_active
+                ? __('This barcode is already registered. Opened it for editing.')
+                : __('This barcode belongs to an archived product. Opened it for editing; restore it from the list to show it again.'));
+
+            return;
+        }
+        $this->edit();
+        $this->form['barcode'] = $barcode;
+        session()->flash('message', __('This barcode is not registered yet. Add the product below, or fill it in from Open Food Facts.'));
     }
 
     public function boot(): void

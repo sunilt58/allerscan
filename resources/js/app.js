@@ -550,54 +550,60 @@ function stopCamera() {
     video?.srcObject?.getTracks().forEach((track) => track.stop());
     if (video) video.srcObject = null;
 }
-document
-    .querySelector("[data-camera-open]")
-    ?.addEventListener("click", async () => {
-        const dialog = document.getElementById("camera-dialog");
-        const message = document.getElementById("camera-message");
-        const video = document.getElementById("camera-video");
-        dialog.showModal();
-        message.textContent = t("Starting camera…");
-        const generation = ++cameraGeneration;
-        let handled = false;
-        if (!navigator.mediaDevices?.getUserMedia) {
-            message.textContent = t(
-                "Camera access needs HTTPS and a supported browser. You can enter a barcode instead.",
-            );
+// Delegated so buttons re-rendered by Livewire keep working. The button names the input and form for the code.
+document.addEventListener("click", async (event) => {
+    const opener = event.target.closest("[data-camera-open]");
+    if (!opener) return;
+    const target = {
+        input: opener.dataset.cameraInput || "barcode",
+        form: opener.dataset.cameraForm || "barcode-form",
+    };
+    const dialog = document.getElementById("camera-dialog");
+    const message = document.getElementById("camera-message");
+    const video = document.getElementById("camera-video");
+    dialog.showModal();
+    message.textContent = t("Starting camera…");
+    const generation = ++cameraGeneration;
+    let handled = false;
+    if (!navigator.mediaDevices?.getUserMedia) {
+        message.textContent = t(
+            "Camera access needs HTTPS and a supported browser. You can enter a barcode instead.",
+        );
+        return;
+    }
+    try {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        if (generation !== cameraGeneration) return;
+        const reader = new BrowserMultiFormatReader();
+        const controls = await reader.decodeFromConstraints(
+            { video: { facingMode: "environment" }, audio: false },
+            video,
+            (result, error, controls) => {
+                if (!result || handled || generation !== cameraGeneration)
+                    return;
+                handled = true;
+                controls.stop();
+                dialog.close();
+                document.getElementById(target.input).value = result
+                    .getText()
+                    .trim();
+                document.getElementById(target.form).requestSubmit();
+            },
+        );
+        if (generation !== cameraGeneration || !dialog.open) {
+            controls.stop();
             return;
         }
-        try {
-            const { BrowserMultiFormatReader } = await import("@zxing/browser");
-            if (generation !== cameraGeneration) return;
-            const reader = new BrowserMultiFormatReader();
-            const controls = await reader.decodeFromConstraints(
-                { video: { facingMode: "environment" }, audio: false },
-                video,
-                (result, error, controls) => {
-                    if (!result || handled || generation !== cameraGeneration)
-                        return;
-                    handled = true;
-                    controls.stop();
-                    dialog.close();
-                    const input = document.getElementById("barcode");
-                    input.value = result.getText().trim();
-                    document.getElementById("barcode-form").requestSubmit();
-                },
-            );
-            if (generation !== cameraGeneration || !dialog.open) {
-                controls.stop();
-                return;
-            }
-            scannerControls = controls;
-            message.textContent = t("Hold the product barcode in the frame.");
-        } catch {
-            if (generation !== cameraGeneration) return;
-            stopCamera();
-            message.textContent = t(
-                "Camera unavailable. Check permission, or enter the barcode manually.",
-            );
-        }
-    });
+        scannerControls = controls;
+        message.textContent = t("Hold the product barcode in the frame.");
+    } catch {
+        if (generation !== cameraGeneration) return;
+        stopCamera();
+        message.textContent = t(
+            "Camera unavailable. Check permission, or enter the barcode manually.",
+        );
+    }
+});
 document
     .querySelectorAll("[data-camera-close]")
     .forEach((button) =>

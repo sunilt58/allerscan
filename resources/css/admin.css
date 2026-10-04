@@ -269,3 +269,33 @@
 .off-lookup .notice p {
     margin: 0 0 4px;
 }
+.admin-scan {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.admin-scan form {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.admin-scan input {
+    width: 220px;
+}
+@media (max-width: 700px) {
+    .admin-app .page-intro {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .admin-scan,
+    .admin-scan form {
+        justify-content: stretch;
+    }
+    .admin-scan input {
+        flex: 1;
+        width: auto;
+        min-width: 0;
+    }
+}
