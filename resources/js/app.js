@@ -548,7 +548,10 @@ function stopCamera() {
     scannerControls = null;
     const video = document.getElementById("camera-video");
     video?.srcObject?.getTracks().forEach((track) => track.stop());
-    if (video) video.srcObject = null;
+    if (video) {
+        video.srcObject = null;
+        video.classList.remove("is-mirrored");
+    }
 }
 // Delegated so buttons re-rendered by Livewire keep working. The button names the input and form for the code.
 document.addEventListener("click", async (event) => {
@@ -595,6 +598,10 @@ document.addEventListener("click", async (event) => {
             return;
         }
         scannerControls = controls;
+        // Mirror the preview like a mirror for front cameras and laptop webcams (which usually report no
+        // direction), but never for a phone's rear camera. Decoding reads the unflipped frames.
+        const facing = video.srcObject?.getVideoTracks()[0]?.getSettings().facingMode;
+        video.classList.toggle("is-mirrored", facing !== "environment");
         message.textContent = t("Hold the product barcode in the frame.");
     } catch {
         if (generation !== cameraGeneration) return;

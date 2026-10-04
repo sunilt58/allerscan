@@ -852,6 +852,9 @@ body.shopper-app {
     border-radius: 12px;
     background: #122018;
 }
+.camera-dialog video.is-mirrored {
+    transform: scaleX(-1);
+}
 .camera-dialog p {
     font-size: 0.82rem;
 }
