@@ -13,6 +13,23 @@
     @if($suggestionId)<div class="notice warning" role="note">{{ __('Filled in from a shopper suggestion. Check every field against the package label before saving. Leave the status as Unknown until the allergens are confirmed.') }}</div>@endif
     @if($errors->any())<div class="notice danger" role="alert"><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <div class="form-grid"><label>{{ __('Barcode') }}<input x-ref="first" wire:model="form.barcode" required maxlength="50"></label><label>{{ __('Japanese name') }}<input wire:model="form.name_ja" required maxlength="255" lang="ja"></label><label>{{ __('English name') }}<input wire:model="form.name_en" required maxlength="255" lang="en"></label><label>{{ __('Size') }}<input wire:model="form.size" required maxlength="100"></label><label>{{ __('Category') }}<select wire:model="form.category">@foreach(['Food', 'Drinks', 'Snacks', 'Daily'] as $category)<option value="{{ $category }}">{{ __($category) }}</option>@endforeach</select></label><label>{{ __('Icon') }}<select wire:model="form.icon">@foreach(['📦','🥛','🍞','🍙','🍵','🍫','🍜','🍎','🍪','🧃','🥗','🧴'] as $icon)<option>{{ $icon }}</option>@endforeach</select></label></div>
+    <div class="off-lookup">
+        <button type="button" class="button secondary" wire:click="fetchFromOpenFoodFacts" wire:loading.attr="disabled" wire:target="fetchFromOpenFoodFacts"><x-icon name="search"/><span wire:loading.remove wire:target="fetchFromOpenFoodFacts">{{ __('Fill in from Open Food Facts') }}</span><span wire:loading wire:target="fetchFromOpenFoodFacts">{{ __('Looking up…') }}</span></button>
+        <small class="muted">{{ __('Fills empty fields from the barcode as a draft. Data:') }} <a class="text-link" href="https://world.openfoodfacts.org" target="_blank" rel="noopener">Open Food Facts</a> (ODbL)</small>
+        @if($openFoodFacts)
+            @if($openFoodFacts['found'] === true)
+                <div class="notice warning" role="status">
+                    <p><strong>{{ __('Filled in from Open Food Facts. Check every field against the package label.') }}</strong> {{ __('Information status was set to Unknown; change it to Recorded only after checking the package.') }}</p>
+                    @if($openFoodFacts['other_allergens'])<p>{{ __('Also listed there, not selected automatically: :list', ['list' => implode(', ', $openFoodFacts['other_allergens'])]) }}</p>@endif
+                    @if($openFoodFacts['traces'])<p>{{ __('May contain (traces): :list', ['list' => implode(', ', $openFoodFacts['traces'])]) }}</p>@endif
+                </div>
+            @elseif($openFoodFacts['found'] === false)
+                <div class="notice" role="status">{{ __('This barcode is not in Open Food Facts. Enter the details from the package.') }}</div>
+            @else
+                <div class="notice danger" role="alert">{{ __('Could not reach Open Food Facts. Try again, or enter the details from the package.') }}</div>
+            @endif
+        @endif
+    </div>
     <div class="form-section"><h3>{{ __('Allergen information') }}</h3><p class="muted">{{ __('Select once. Japanese and English use the same allergen record.') }}</p><div class="checkbox-grid">@foreach($allergens as $allergen)<label><input type="checkbox" wire:model="allergenIds" value="{{ $allergen->id }}">{{ $allergen->name_ja }} / {{ $allergen->name_en }}</label>@endforeach</div><p class="small muted">{{ __('Japan’s mandatory and recommended labeling items. Record exactly what the package label declares.') }}</p></div>
     <div class="form-grid"><label>{{ __('Information status') }}<select wire:model="form.information_status"><option value="unknown">{{ __('Unknown') }}</option><option value="recorded">{{ __('Recorded') }}</option></select></label><label>{{ __('Checked date') }}<input type="date" wire:model="form.verified_at" max="{{ now()->toDateString() }}"></label><label class="full">{{ __('Source') }}<input wire:model="form.source" placeholder="{{ __('Package label photo or source reference') }}" maxlength="255"></label></div>
     <label class="checkbox-label"><input type="checkbox" wire:model="form.is_demo">{{ __('Sample record (not real label information)') }}</label><div class="modal-actions"><button type="button" class="button secondary" wire:click="$set('editing', false)">{{ __('Cancel') }}</button><button class="button primary" type="submit" wire:loading.attr="disabled">{{ __('Save product') }}</button></div>

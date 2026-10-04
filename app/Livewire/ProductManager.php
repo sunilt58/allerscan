@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Allergen;
 use App\Models\Product;
 use App\Models\Suggestion;
+use App\Services\OpenFoodFacts;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
@@ -32,6 +33,14 @@ class ProductManager extends Component
     #[Locked]
     public ?int $suggestionId = null;
 
+    /**
+     * The last Open Food Facts lookup, shown under the barcode field.
+     *
+     * @var array<string, mixed>|null
+     */
+    #[Locked]
+    public ?array $openFoodFacts = null;
+
     public function mount(): void
     {
         if (request()->integer('suggestion') > 0) {
@@ -53,6 +62,7 @@ class ProductManager extends Component
     {
         $this->resetValidation();
         $this->suggestionId = null;
+        $this->openFoodFacts = null;
         $product = $id ? Product::with('allergens')->findOrFail($id) : null;
         $this->productId = $id;
         $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
@@ -85,6 +95,30 @@ class ProductManager extends Component
         ] + $this->form;
         $this->allergenIds = Allergen::whereIn('code', $suggestion->allergen_codes ?? [])->pluck('id')->all();
         $this->suggestionId = $suggestion->id;
+    }
+
+    /**
+     * Fill empty fields from Open Food Facts as a draft. The status is set to Unknown so the team
+     * must check the package label before the record counts as recorded.
+     */
+    public function fetchFromOpenFoodFacts(OpenFoodFacts $openFoodFacts): void
+    {
+        $this->validateOnly('form.barcode', ['form.barcode' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9-]+$/']]);
+        $result = $openFoodFacts->lookup($this->form['barcode']);
+        $this->openFoodFacts = $result ?? ['found' => null];
+        if (! ($result['found'] ?? false)) {
+            return;
+        }
+        foreach (['name_ja', 'name_en', 'size'] as $field) {
+            if (blank($this->form[$field] ?? null) && filled($result[$field])) {
+                $this->form[$field] = mb_substr($result[$field], 0, $field === 'size' ? 100 : 255);
+            }
+        }
+        $this->allergenIds = array_values(array_unique(array_merge(
+            array_map('intval', $this->allergenIds),
+            Allergen::whereIn('code', $result['allergen_codes'])->pluck('id')->all(),
+        )));
+        $this->form['information_status'] = 'unknown';
     }
 
     public function save(): void

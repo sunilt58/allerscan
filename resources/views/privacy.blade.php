@@ -16,6 +16,7 @@
 <section class="preference-section" id="terms">
     <h2>{{ __('Terms of use') }}</h2>
     <p><strong>{{ __('Not medical or dietary advice.') }}</strong> {{ __('AllerScan shows allergen information that our team recorded from product packaging. Records may be incomplete or out of date, and manufacturers change ingredients. A product without a highlighted match, or with no recorded allergens, is not necessarily allergen-free. Always check the actual package label and manufacturer information, and consult a medical professional about your allergies.') }}</p>
+    <p><strong>{{ __('Product data sources.') }}</strong> {{ __('Our team checks every record against the package label. Some product names and allergens were first drafted from Open Food Facts (openfoodfacts.org), available under the Open Database License (ODbL).') }}</p>
     <p>{{ __('The service is provided “as is” and may change or stop without notice. We are not liable for decisions made using information shown here.') }}</p>
 </section>
 @if(config('allerscan.contact_email'))

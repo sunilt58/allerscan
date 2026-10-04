@@ -88,6 +88,8 @@ Phones can only reach the API at an HTTPS address that is online (iPhone blocks 
 
 The team enters real products from their packaging: barcode, Japanese and English names, size, the allergens the label declares, the source (for example "Package label, photographed 2026-10-01"), and the date checked. New entries are real catalog records. Until allergens have been checked against the label, leave **Information status** as *Unknown*; shoppers then see "Information unconfirmed" rather than "None recorded".
 
+In the product form, **Fill in from Open Food Facts** looks the barcode up in the free, crowd-sourced [Open Food Facts](https://world.openfoodfacts.org) database. It fills only empty fields, ticks allergens that map exactly to our list, lists the rest (for example "gluten" or "crustaceans") for the team to decide, and sets the status to *Unknown*. Coverage of Japanese products is limited, and the data is a draft: check it against the package before marking it *Recorded*. Open Food Facts data is under the ODbL, credited on the Privacy & terms page.
+
 `php artisan db:seed` also adds ten **sample records** (`DEMO001`–`DEMO010`) in local and testing environments only. They are fictional, labeled SAMPLE wherever they appear, and used by the automated tests. They are never seeded on a deployed site. Archive them locally once real products are entered if you don't want to see them.
 
 An empty recorded list or no preference match never establishes that a product is allergen-free. Always check the real packaging and manufacturer information.
