@@ -1868,3 +1868,19 @@ body.shopper-app {
         grid-template-columns: minmax(0, 1fr);
     }
 }
+/* Product photos, shown instead of the emoji icon when the team adds one. */
+.product-photo {
+    max-width: 78%;
+    max-height: 140px;
+    object-fit: contain;
+    border-radius: 10px;
+    filter: drop-shadow(0 9px 6px #33463415);
+}
+.detail-photo {
+    max-width: 78%;
+    max-height: 70%;
+    margin-bottom: 40px;
+    object-fit: contain;
+    border-radius: 16px;
+    filter: drop-shadow(0 18px 10px #25362a1a);
+}

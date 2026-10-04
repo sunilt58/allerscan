@@ -90,6 +90,8 @@ The team enters real products from their packaging: barcode, Japanese and Englis
 
 When a team member scans or types a barcode that isn't in the catalog on the shopper **Scan** page, **Register this product** opens the add-product form with the barcode filled in; shoppers see the suggestion link instead. The team's product page also has its own barcode box with a camera button: a registered (or archived) barcode opens that product for editing, and a new one opens the add-product form.
 
+The product form also takes an optional **product photo** (JPEG, PNG or WebP up to 4 MB; SVG is refused). It replaces the emoji icon on product cards, the product page, the team's list, and the app API's `image_url`. Photos are stored on the public disk in `storage/app/public/products`, so each machine needs `php artisan storage:link` once; they are not in Git.
+
 In the product form, **Fill in from Open Food Facts** looks the barcode up in the free, crowd-sourced [Open Food Facts](https://world.openfoodfacts.org) database. It fills only empty fields, ticks allergens that map exactly to our list, lists the rest (for example "gluten" or "crustaceans") for the team to decide, and sets the status to *Unknown*. Coverage of Japanese products is limited, and the data is a draft: check it against the package before marking it *Recorded*. Open Food Facts data is under the ODbL, credited on the Privacy & terms page.
 
 `php artisan db:seed` also adds ten **sample records** (`DEMO001`–`DEMO010`) in local and testing environments only. They are fictional, labeled SAMPLE wherever they appear, and used by the automated tests. They are never seeded on a deployed site. Archive them locally once real products are entered if you don't want to see them.
@@ -114,6 +116,7 @@ Create an empty dedicated MySQL database named `allerscan`, configure credential
 
 ```sh
 php artisan migrate --seed
+php artisan storage:link
 herd secure allerscan
 ```
 
@@ -136,7 +139,7 @@ Use the Herd URL. `npm run dev` watches frontend edits; `npm run build` produces
     npm run build
     ```
 
-4. **Start All**, open **Database**, and create `allerscan`. Laragon's MySQL uses `root` with an empty password, which matches `.env.example`. Then run `php artisan migrate --seed`.
+4. **Start All**, open **Database**, and create `allerscan`. Laragon's MySQL uses `root` with an empty password, which matches `.env.example`. Then run `php artisan migrate --seed` and `php artisan storage:link`.
 5. The camera requires HTTPS: enable **Menu → Apache → SSL**, add Laragon's certificate to the Windows trust store from the same menu, restart Laragon, and open `https://allerscan.test`.
 6. Run `php artisan test --compact` to confirm the setup.
 

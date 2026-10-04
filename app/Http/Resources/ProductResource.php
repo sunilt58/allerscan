@@ -27,6 +27,7 @@ class ProductResource extends JsonResource
             'size' => $this->size,
             'category' => $this->category,
             'icon' => $this->icon,
+            'image_url' => $this->image_url,
             'information_status' => $this->information_status,
             'allergens' => AllergenResource::collection($this->whenLoaded('allergens')),
             'source' => $this->source,

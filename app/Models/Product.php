@@ -37,6 +37,14 @@ class Product extends Model
     }
 
     /**
+     * The product photo's address, relative to the current host so it also works on the local network.
+     */
+    protected function imageUrl(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->image_path ? asset('storage/'.$this->image_path) : null);
+    }
+
+    /**
      * Products shoppers can see; archived products are hidden everywhere.
      *
      * @param  Builder<Product>  $query

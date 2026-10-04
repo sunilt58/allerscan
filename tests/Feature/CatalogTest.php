@@ -8,6 +8,8 @@ use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -181,6 +183,51 @@ class CatalogTest extends TestCase
         Livewire::withQueryParams(['barcode' => 'DEMO001'])->test(ProductManager::class)
             ->assertSet('productId', $milk->id)->assertSee('archived product');
         Livewire::withQueryParams(['barcode' => '<script>'])->test(ProductManager::class)->assertSet('editing', false);
+    }
+
+    public function test_the_team_can_add_replace_and_remove_a_product_photo(): void
+    {
+        Storage::fake('public');
+        $this->seed();
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        $milk = Product::where('barcode', 'DEMO001')->firstOrFail();
+
+        Livewire::test(ProductManager::class)->call('edit', $milk->id)
+            ->set('photo', UploadedFile::fake()->image('milk.jpg', 600, 600))->call('save')->assertHasNoErrors();
+        $first = $milk->fresh()->image_path;
+        Storage::disk('public')->assertExists($first);
+        $this->get(route('catalog.show', $milk))->assertSee(asset('storage/'.$first), false)->assertDontSee('detail-emoji');
+        $this->get('/')->assertSee('class="product-photo"', false);
+        $this->getJson('/api/v1/products/barcode/DEMO001')->assertJsonPath('data.image_url', asset('storage/'.$first));
+
+        Livewire::test(ProductManager::class)->call('edit', $milk->id)->assertSet('currentPhotoUrl', asset('storage/'.$first))
+            ->set('photo', UploadedFile::fake()->image('milk2.png', 400, 400))->call('save')->assertHasNoErrors();
+        $second = $milk->fresh()->image_path;
+        $this->assertNotSame($first, $second);
+        Storage::disk('public')->assertMissing($first);
+
+        Livewire::test(ProductManager::class)->call('edit', $milk->id)->call('clearPhoto')->call('save')->assertHasNoErrors();
+        $this->assertNull($milk->fresh()->image_path);
+        Storage::disk('public')->assertMissing($second);
+        $this->get(route('catalog.show', $milk))->assertSee('detail-emoji');
+    }
+
+    public function test_product_photos_must_be_small_raster_images(): void
+    {
+        Storage::fake('public');
+        $this->seed();
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        $milk = Product::where('barcode', 'DEMO001')->firstOrFail();
+        foreach ([
+            UploadedFile::fake()->create('evil.svg', 5, 'image/svg+xml'),
+            UploadedFile::fake()->create('label.pdf', 50, 'application/pdf'),
+            UploadedFile::fake()->image('huge.jpg')->size(5000),
+        ] as $file) {
+            Livewire::test(ProductManager::class)->call('edit', $milk->id)->set('photo', $file)->assertHasErrors('photo')
+                ->call('save')->assertHasErrors('photo');
+        }
+        $this->assertNull($milk->fresh()->image_path);
+        $this->assertSame([], Storage::disk('public')->allFiles('products'));
     }
 
     public function test_admin_can_archive_and_restore_a_product(): void

@@ -7,14 +7,17 @@ use App\Models\Product;
 use App\Models\Suggestion;
 use App\Services\OpenFoodFacts;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 class ProductManager extends Component
 {
-    use WithPagination;
+    use WithFileUploads, WithPagination;
 
     public string $search = '';
 
@@ -26,6 +29,16 @@ class ProductManager extends Component
     public array $form = [];
 
     public array $allergenIds = [];
+
+    /**
+     * A newly chosen product photo, uploaded temporarily until the product is saved.
+     */
+    public ?TemporaryUploadedFile $photo = null;
+
+    public bool $removePhoto = false;
+
+    #[Locked]
+    public ?string $currentPhotoUrl = null;
 
     /**
      * The shopper suggestion this form was opened from, marked approved when the product is saved.
@@ -84,6 +97,8 @@ class ProductManager extends Component
         $this->resetValidation();
         $this->suggestionId = null;
         $this->openFoodFacts = null;
+        $this->photo = null;
+        $this->removePhoto = false;
         $product = $id ? Product::with('allergens')->findOrFail($id) : null;
         $this->productId = $id;
         $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
@@ -92,6 +107,7 @@ class ProductManager extends Component
             'source' => '', 'verified_at' => '', 'is_demo' => false,
         ];
         $this->allergenIds = $product ? $product->allergens->pluck('id')->all() : [];
+        $this->currentPhotoUrl = $product?->image_url;
         $this->editing = true;
     }
 
@@ -142,6 +158,24 @@ class ProductManager extends Component
         $this->form['information_status'] = 'unknown';
     }
 
+    /**
+     * Check a chosen photo straight away, before the rest of the form is saved.
+     */
+    public function updatedPhoto(): void
+    {
+        $this->validateOnly('photo', ['photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096']]);
+    }
+
+    /**
+     * Drop a newly chosen photo and remove the saved one when the product is saved.
+     */
+    public function clearPhoto(): void
+    {
+        $this->photo = null;
+        $this->removePhoto = true;
+        $this->resetValidation('photo');
+    }
+
     public function save(): void
     {
         $validated = $this->validate([
@@ -157,24 +191,46 @@ class ProductManager extends Component
             'form.is_demo' => ['required', 'boolean'],
             'allergenIds' => ['array'],
             'allergenIds.*' => ['integer', 'distinct', 'exists:allergens,id'],
+            // SVG is not accepted: it can carry scripts.
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
         // Livewire bypasses ConvertEmptyStringsToNull, and MySQL rejects '' for a DATE column.
         foreach (['source', 'verified_at'] as $optionalField) {
             $validated['form'][$optionalField] = $validated['form'][$optionalField] ?: null;
         }
-        DB::transaction(function () use ($validated) {
-            $product = $this->productId ? Product::lockForUpdate()->findOrFail($this->productId) : new Product;
-            if (! $product->exists) {
-                $product->price = 0;
-                $product->tax_rate = 8;
+        $newPhoto = $this->photo?->store('products', 'public');
+        try {
+            $oldPhoto = DB::transaction(function () use ($validated, $newPhoto) {
+                $product = $this->productId ? Product::lockForUpdate()->findOrFail($this->productId) : new Product;
+                if (! $product->exists) {
+                    $product->price = 0;
+                    $product->tax_rate = 8;
+                }
+                $oldPhoto = $product->image_path;
+                $product->fill($validated['form']);
+                if ($newPhoto || $this->removePhoto) {
+                    $product->image_path = $newPhoto;
+                }
+                $product->save();
+                $product->allergens()->sync($validated['allergenIds']);
+                if ($this->suggestionId) {
+                    Suggestion::pending()->lockForUpdate()->find($this->suggestionId)?->markReviewed('approved', auth()->user(), $product);
+                }
+
+                return $product->image_path === $oldPhoto ? null : $oldPhoto;
+            });
+        } catch (\Throwable $exception) {
+            if ($newPhoto) {
+                Storage::disk('public')->delete($newPhoto);
             }
-            $product->fill($validated['form']);
-            $product->save();
-            $product->allergens()->sync($validated['allergenIds']);
-            if ($this->suggestionId) {
-                Suggestion::pending()->lockForUpdate()->find($this->suggestionId)?->markReviewed('approved', auth()->user(), $product);
-            }
-        });
+            throw $exception;
+        }
+        // The replaced or removed photo is deleted only once the new record is saved.
+        if ($oldPhoto) {
+            Storage::disk('public')->delete($oldPhoto);
+        }
+        $this->photo = null;
+        $this->removePhoto = false;
         $this->suggestionId = null;
         $this->editing = false;
         session()->flash('message', __('Product saved.'));
@@ -200,6 +256,7 @@ class ProductManager extends Component
             'form.is_demo' => __('Sample record'),
             'allergenIds' => __('Allergen information'),
             'allergenIds.*' => __('Allergen information'),
+            'photo' => __('Product photo'),
         ];
     }
 
