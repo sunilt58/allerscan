@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -33,6 +34,30 @@ class Product extends Model
         return Attribute::get(fn (): array => app()->getLocale() === 'en'
             ? ['name' => $this->name_ja, 'lang' => 'ja']
             : ['name' => $this->name_en, 'lang' => 'en']);
+    }
+
+    /**
+     * Products shoppers can see; archived products are hidden everywhere.
+     *
+     * @param  Builder<Product>  $query
+     */
+    public function scopeActive(Builder $query): void
+    {
+        $query->where('is_active', true);
+    }
+
+    /**
+     * Match a Japanese or English name, or an exact barcode.
+     *
+     * @param  Builder<Product>  $query
+     */
+    public function scopeMatching(Builder $query, string $search): void
+    {
+        $query->where(function (Builder $query) use ($search) {
+            $query->where('name_ja', 'like', '%'.$search.'%')
+                ->orWhere('name_en', 'like', '%'.$search.'%')
+                ->orWhere('barcode', $search);
+        });
     }
 
     public function allergens(): BelongsToMany

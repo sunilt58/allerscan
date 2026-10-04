@@ -2,35 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Allergen;
-use App\Models\Product;
+use App\Http\Requests\RegisterAccountRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rules\Password;
 
 class AccountController extends Controller
 {
-    public const SAVED_PRODUCT_LIMIT = 50;
-
-    public function store(Request $request): RedirectResponse
+    public function store(RegisterAccountRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'confirmed', Password::min(8)],
-            'consent' => ['accepted'],
-        ]);
-        $user = new User;
-        $user->forceFill([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => $validated['password'],
-            'role' => 'shopper',
-        ])->save();
+        $user = User::createShopper($request->validated());
         Auth::login($user, remember: true);
         $request->session()->regenerate();
 
@@ -46,15 +29,11 @@ class AccountController extends Controller
         $validated = $request->validate([
             'allergens' => ['present', 'array', 'max:100'],
             'allergens.*' => ['string', 'max:50'],
-            'savedProducts' => ['present', 'array', 'max:'.self::SAVED_PRODUCT_LIMIT],
+            'savedProducts' => ['present', 'array', 'max:'.User::SAVED_PRODUCT_LIMIT],
             'savedProducts.*' => ['integer', 'min:1'],
         ]);
         $user = $request->user();
-        DB::transaction(function () use ($user, $validated) {
-            // Unknown codes and deleted products are dropped rather than rejected, so an old browser list still saves.
-            $user->allergens()->sync(Allergen::whereIn('code', $validated['allergens'])->pluck('id'));
-            $user->savedProducts()->sync(Product::whereIn('id', $validated['savedProducts'])->pluck('id'));
-        });
+        $user->syncShopperPreferences($validated['allergens'], $validated['savedProducts']);
 
         return response()->json($user->shopperPreferences());
     }

@@ -18,14 +18,8 @@ class CatalogController extends Controller
         ]);
         $search = trim($filters['q'] ?? '');
         $category = $filters['category'] ?? '';
-        $products = Product::with('allergens')->where('is_active', true)
-            ->when($search !== '', function ($query) use ($search) {
-                $query->where(function ($query) use ($search) {
-                    $query->where('name_ja', 'like', '%'.$search.'%')
-                        ->orWhere('name_en', 'like', '%'.$search.'%')
-                        ->orWhere('barcode', $search);
-                });
-            })
+        $products = Product::with('allergens')->active()
+            ->when($search !== '', fn ($query) => $query->matching($search))
             ->when($category !== '', fn ($query) => $query->where('category', $category))
             ->orderBy('id')->paginate(12)->withQueryString();
 

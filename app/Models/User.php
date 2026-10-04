@@ -11,13 +11,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
+use Laravel\Sanctum\HasApiTokens;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
+
+    public const SAVED_PRODUCT_LIMIT = 50;
 
     /**
      * Get the attributes that should be cast.
@@ -30,6 +34,44 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // App sign-in tokens are polymorphic rows without a foreign key, so they are removed explicitly.
+        static::deleting(fn (User $user) => $user->tokens()->delete());
+    }
+
+    /**
+     * Create a shopper account from validated registration input.
+     *
+     * @param  array{name: string, email: string, password: string}  $validated
+     */
+    public static function createShopper(array $validated): self
+    {
+        $user = new self;
+        $user->forceFill([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+            'role' => 'shopper',
+        ])->save();
+
+        return $user;
+    }
+
+    /**
+     * Replace the synced allergens and saved products. Unknown codes and missing products are dropped.
+     *
+     * @param  list<string>  $allergenCodes
+     * @param  list<int>  $productIds
+     */
+    public function syncShopperPreferences(array $allergenCodes, array $productIds): void
+    {
+        DB::transaction(function () use ($allergenCodes, $productIds) {
+            $this->allergens()->sync(Allergen::whereIn('code', $allergenCodes)->pluck('id'));
+            $this->savedProducts()->sync(Product::whereIn('id', $productIds)->pluck('id'));
+        });
     }
 
     public function isAdmin(): bool

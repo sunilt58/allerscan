@@ -60,6 +60,30 @@ Signed-in shoppers can suggest a product (barcode, names, size, category, allerg
 
 Shoppers see *Waiting for review*, *Added*, or *Not added* on their suggestion page. Each account may have 20 suggestions waiting at once, and suggestions are deleted with the account.
 
+## Smartphone app API
+
+The Android and iPhone app uses the same accounts, catalog, and suggestions as the website through a JSON API at `/api/v1`. Send `Accept: application/json`; add `Accept-Language: en` for English messages (Japanese is the default). Sign-in uses Laravel Sanctum tokens: `register` and `login` return a `token`, which signed-in requests send as `Authorization: Bearer <token>`. Each device has its own token; `logout` ends only that device's.
+
+| Method | Path | Sign-in | Purpose |
+|---|---|---|---|
+| POST | `/api/v1/register` | — | Create a shopper account: `name`, `email`, `password`, `password_confirmation`, `consent` (true), `device_name` |
+| POST | `/api/v1/login` | — | `email`, `password`, `device_name` → `token` and `user` |
+| GET | `/api/v1/allergens` | — | The allergen list (`code`, `name_ja`, `name_en`) |
+| GET | `/api/v1/products/barcode/{barcode}` | — | Look up a scanned barcode; 404 with a `message` if it isn't in the catalog |
+| GET | `/api/v1/products?q=&category=` | — | Search by name or exact barcode, 20 per page |
+| GET | `/api/v1/products/{id}` | — | One product |
+| GET | `/api/v1/me` | ✓ | The account, its `allergens` (codes) and `saved_products` (ids) |
+| PUT | `/api/v1/me/preferences` | ✓ | Replace `allergens` and `saved_products` (up to 50) |
+| GET | `/api/v1/me/saved-products` | ✓ | Saved products with details |
+| GET | `/api/v1/me/suggestions` | ✓ | The account's suggestions and their `status` |
+| POST | `/api/v1/suggestions` | ✓ | Suggest a product or allergen (same fields as the website form) |
+| POST | `/api/v1/logout` | ✓ | Sign out this device |
+| DELETE | `/api/v1/me` | ✓ | Delete the account (`password` required) |
+
+Products include both language names, `information_status` (`recorded` or `unknown`), `is_sample`, and their `allergens`. **An `unknown` product must be shown as "information unconfirmed", never as allergen-free**, and an empty allergen list never means a product is safe. Validation errors return 422 with an `errors` object; a missing or expired token returns 401.
+
+Phones can only reach the API at an HTTPS address that is online (iPhone blocks plain HTTP by default), so test against a deployed site or a `herd share` link rather than `allerscan.test`.
+
 ## Product data
 
 The team enters real products from their packaging: barcode, Japanese and English names, size, the allergens the label declares, the source (for example "Package label, photographed 2026-10-01"), and the date checked. New entries are real catalog records. Until allergens have been checked against the label, leave **Information status** as *Unknown*; shoppers then see "Information unconfirmed" rather than "None recorded".
@@ -120,6 +144,7 @@ Each machine has its own database, so catalog entries made on one computer do no
 - `app/Livewire/ProductManager.php`: admin catalog editing and validation.
 - `app/Http/Controllers/AccountController.php`: registration, synced allergens and saved products, account deletion.
 - `app/Http/Controllers/SuggestionController.php` and `app/Livewire/SuggestionReview.php`: shopper suggestions and the team's review list.
+- `routes/api.php`, `app/Http/Controllers/Api/V1/`, and `app/Http/Resources/`: the smartphone app API. Registration and suggestion rules are shared with the website through `app/Http/Requests/`.
 - `resources/views/components/admin-layout.blade.php` and `resources/css/admin.css`: the team area's layout.
 - `resources/views/`: shopper pages, shared components, settings, and admin management.
 - `resources/js/app.js`: local preferences, highlighting, saved lists, camera, speech, and installation prompt.
@@ -146,7 +171,7 @@ npm run build
 npm run test:browser
 ```
 
-PHP tests use isolated in-memory SQLite and cover public search/detail routes, missing and archived products, request limits, output escaping, admin authorization, catalog validation, registration, preference sync, account deletion, suggestions, and team-only access.
+PHP tests use isolated in-memory SQLite and cover public search/detail routes, missing and archived products, request limits, output escaping, admin authorization, catalog validation, registration, preference sync, account deletion, suggestions, team-only access, and the app API.
 
 Browser tests use installed Google Chrome and the running Herd site, and need the local sample records. They do not edit the development catalog; the account and suggestion tests each create one account and delete it again. Set `PLAYWRIGHT_BASE_URL` to override the URL. They cover allergen highlights, saved-list recovery and synchronization, voice selection using simulated browser voices, themes, phone layouts, camera denial, and service-worker offline behavior. Screenshots are saved under the ignored `storage/app/testing/` directory.
 
