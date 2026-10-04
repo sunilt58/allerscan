@@ -448,7 +448,8 @@ function stopSpeech() {
     window.speechSynthesis?.cancel();
     currentUtterance = null;
 }
-function speakMessage(message, lang, voice = null) {
+// onBlocked runs when the browser refuses to speak without a tap (for example iPhone Safari after a scan).
+function speakMessage(message, lang, voice = null, onBlocked = null) {
     const status = document.querySelector("[data-speech-status]");
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
         if (status)
@@ -463,20 +464,34 @@ function speakMessage(message, lang, voice = null) {
     utterance.voice = voice || pickVoice(lang);
     utterance.rate = 0.95;
     currentUtterance = utterance;
+    let started = false;
+    utterance.onstart = () => {
+        started = true;
+        document
+            .querySelectorAll("[data-read-product].needs-attention")
+            .forEach((button) => button.classList.remove("needs-attention"));
+    };
     utterance.onend = () => {
         if (currentUtterance === utterance) {
             currentUtterance = null;
             if (status) status.textContent = t("Finished reading.");
         }
     };
-    utterance.onerror = () => {
-        if (currentUtterance === utterance && status)
+    utterance.onerror = (event) => {
+        if (currentUtterance !== utterance) return;
+        if (event.error === "not-allowed" && onBlocked) onBlocked();
+        else if (status)
             status.textContent = t(
                 "Unable to read aloud. Try another voice in Settings.",
             );
     };
     if (status) status.textContent = t("Reading product information…");
     speechTimer = setTimeout(() => speechSynthesis.speak(utterance), 100);
+    // Some browsers stay silent without any event when speech is blocked.
+    if (onBlocked)
+        setTimeout(() => {
+            if (!started && currentUtterance === utterance) onBlocked();
+        }, 2500);
 }
 for (const button of document.querySelectorAll("[data-read-product]")) {
     button.addEventListener("click", () => {
@@ -531,9 +546,43 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
                 ? "記録にないアレルゲンが含まれる可能性があります。必ず実際の商品表示とメーカー情報を確認してください。"
                 : "Records may be incomplete. This does not mean allergen-free. Always check the actual package label and manufacturer information.",
         );
-        speakMessage(parts.join(". "), lang);
+        speakMessage(parts.join(". "), lang, null, button.onSpeechBlocked);
+        button.onSpeechBlocked = null;
     });
 }
+// After a lookup from the Scan page, read the product aloud in the display language.
+const autoReadKey = "allerscan-auto-read";
+function takeAutoReadRequest() {
+    try {
+        const requestedAt = Number(sessionStorage.getItem(autoReadKey));
+        sessionStorage.removeItem(autoReadKey);
+        return requestedAt > 0 && Date.now() - requestedAt < 60000;
+    } catch {
+        return false;
+    }
+}
+if (document.querySelector("[data-product-detail]") && takeAutoReadRequest()) {
+    const lang = document.documentElement.lang === "en" ? "en" : "ja";
+    const button = document.querySelector(`[data-read-product="${lang}"]`);
+    if (button) {
+        button.onSpeechBlocked = () => {
+            stopSpeech();
+            button.classList.add("needs-attention");
+            button.scrollIntoView({ block: "center", behavior: "smooth" });
+            const status = document.querySelector("[data-speech-status]");
+            if (status)
+                status.textContent = t("Tap the button to hear the allergens.");
+        };
+        button.click();
+    }
+}
+document.getElementById("barcode-form")?.addEventListener("submit", () => {
+    try {
+        sessionStorage.setItem(autoReadKey, String(Date.now()));
+    } catch {
+        /* Without storage the product page simply doesn't read aloud by itself. */
+    }
+});
 document.querySelector("[data-stop-speech]")?.addEventListener("click", () => {
     stopSpeech();
     document.querySelector("[data-speech-status]").textContent =
@@ -600,7 +649,9 @@ document.addEventListener("click", async (event) => {
         scannerControls = controls;
         // Mirror the preview like a mirror for front cameras and laptop webcams (which usually report no
         // direction), but never for a phone's rear camera. Decoding reads the unflipped frames.
-        const facing = video.srcObject?.getVideoTracks()[0]?.getSettings().facingMode;
+        const facing = video.srcObject
+            ?.getVideoTracks()[0]
+            ?.getSettings().facingMode;
         video.classList.toggle("is-mirrored", facing !== "environment");
         message.textContent = t("Hold the product barcode in the frame.");
     } catch {
@@ -619,6 +670,13 @@ document
         ),
     );
 document.getElementById("camera-dialog")?.addEventListener("close", stopCamera);
+// "Scan a product" links here with ?camera=1 to open the camera straight away.
+if (new URLSearchParams(location.search).get("camera") === "1") {
+    history.replaceState(null, "", location.pathname);
+    document
+        .querySelector('[data-camera-open][data-camera-form="barcode-form"]')
+        ?.click();
+}
 window.addEventListener("pagehide", () => {
     stopCamera();
     stopSpeech();

@@ -33,6 +33,7 @@
     'Selected allergens are listed',
     'Set your preferences',
     'Starting camera…',
+    'Tap the button to hear the allergens.',
     'This does not confirm absence. Records may be incomplete; check the actual packaging.',
     'Try again',
     'Unable to read aloud. Try another voice in Settings.',
