@@ -34,6 +34,14 @@ class CatalogTest extends TestCase
             'English name' => ['milk', 'Everyday milk'],
             'Japanese name' => ['まいにち', 'Everyday milk'],
             'barcode' => ['DEMO001', 'Everyday milk'],
+            'part of a barcode in lower case' => ['emo001', 'Everyday milk'],
+            'hiragana for katakana' => ['みるくちょこ', 'Milk chocolate'],
+            'half-width katakana' => ['ﾐﾙｸﾁｮｺ', 'Milk chocolate'],
+            'full-width letters' => ['ＭＩＬＫ ＣＨＯＣＯ', 'Milk chocolate'],
+            'words in any order' => ['milk everyday', 'Everyday milk'],
+            'words without spaces' => ['everydaymilk', 'Everyday milk'],
+            'without the long vowel mark' => ['ハンドソプ', 'Hand soap'],
+            'reading of a kanji name' => ['しょくぱん', 'Soft white bread'],
         ];
     }
 
@@ -42,6 +50,18 @@ class CatalogTest extends TestCase
     {
         $this->seed();
         $this->get('/?'.http_build_query(['q' => $query]))->assertOk()->assertSee($name)->assertDontSee('Salted rice ball');
+    }
+
+    public function test_search_keywords_added_by_the_team_find_the_product_in_the_catalog_and_admin_list(): void
+    {
+        $this->seed();
+        $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
+        Livewire::test(ProductManager::class)->call('edit')
+            ->set('form.barcode', '4901313209660')->set('form.name_ja', '亀田の柿の種')->set('form.name_en', 'Kameda rice crackers')
+            ->set('form.keywords', 'かめだ かきのたね')->set('form.size', '6 packs')->call('save')->assertHasNoErrors();
+
+        $this->get('/?q='.urlencode('カキノタネ'))->assertSee('Kameda rice crackers')->assertDontSee('Everyday milk');
+        Livewire::test(ProductManager::class)->set('search', 'かきのたね')->assertSee('亀田の柿の種')->assertDontSee('まいにちミルク');
     }
 
     public function test_category_and_search_combine_and_missing_search_has_an_empty_state(): void
@@ -161,7 +181,7 @@ class CatalogTest extends TestCase
     {
         $this->seed();
         $this->from('/scan')->get('/scan/lookup?barcode=4900000000001')->assertRedirect('/scan');
-        $this->get('/scan')->assertSee('Suggest this product to our team')->assertDontSee('Register this product');
+        $this->get('/scan')->assertSee('Product not found in our catalog.')->assertDontSee('Suggest this product to our team')->assertDontSee('Register this product');
 
         $this->actingAs(User::where('email', 'admin@allerscan.test')->firstOrFail());
         $this->from('/scan')->get('/scan/lookup?barcode=4900000000001');

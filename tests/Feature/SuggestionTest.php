@@ -18,11 +18,12 @@ class SuggestionTest extends TestCase
 
     /**
      * These tests assert English copy; the Japanese default is covered in LocalizationTest.
+     * The suggestion box is off by default, so it is switched on here.
      */
     protected function setUp(): void
     {
         parent::setUp();
-        config(['app.locale' => 'en']);
+        config(['app.locale' => 'en', 'allerscan.suggestions' => true]);
         app()->setLocale('en');
     }
 
@@ -32,6 +33,24 @@ class SuggestionTest extends TestCase
         $admin->forceFill(['role' => 'admin'])->save();
 
         return $admin;
+    }
+
+    public function test_the_suggestion_box_is_hidden_while_switched_off(): void
+    {
+        config(['allerscan.suggestions' => false]);
+        $user = User::factory()->create();
+        Suggestion::factory()->create(['user_id' => $user->id]);
+
+        $this->get('/suggest')->assertNotFound();
+        $this->get('/')->assertDontSee('Suggest an addition');
+        $this->actingAs($user)->post('/suggest', ['type' => 'allergen', 'name_en' => 'Celery'])->assertNotFound();
+        $this->getJson('/api/v1/me/suggestions')->assertNotFound();
+        $this->postJson('/api/v1/suggestions', ['type' => 'allergen', 'name_en' => 'Celery'])->assertNotFound();
+        $this->assertSame(1, Suggestion::count());
+
+        $this->actingAs($this->admin());
+        $this->get('/admin/suggestions')->assertNotFound();
+        $this->get('/admin/products')->assertOk()->assertDontSee('waiting for review')->assertDontSee(route('admin.suggestions'));
     }
 
     public function test_guests_see_a_sign_in_prompt_and_cannot_send_suggestions(): void

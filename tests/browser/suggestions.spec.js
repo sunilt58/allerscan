@@ -62,9 +62,13 @@ test("a shopper's suggestion reaches the team's review list and its outcome is s
     await team.goto("/language/en");
     await team.goto("/login");
     await team.getByLabel("Email address").fill("admin@allerscan.test");
-    await team.getByLabel("Password").fill("AllerScanDemo2027!");
+    await team
+        .getByLabel("Password")
+        .fill(process.env.ADMIN_PASSWORD || "AllerScanDemo2027!");
     await team.getByRole("button", { name: "Sign in", exact: true }).click();
-    await expect(team.getByText(/suggestions? waiting for review/)).toBeVisible();
+    await expect(
+        team.getByText(/suggestions? waiting for review/),
+    ).toBeVisible();
     await team.getByRole("link", { name: /Review now/ }).click();
     const row = team.locator(".suggestion-row", { hasText: allergenName });
     await expect(row).toContainText("From Suggestion Test");

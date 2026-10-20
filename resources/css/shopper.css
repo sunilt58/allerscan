@@ -922,31 +922,11 @@ body.shopper-app {
         monospace;
     overflow-wrap: anywhere;
 }
-.match-panel {
-    background: var(--mint);
-    border: 1px solid var(--line);
-    padding: 20px;
-    border-radius: 12px;
-}
-.match-panel h2 {
-    font-size: 1rem;
-    margin: 0 0 8px;
-}
-.match-panel p {
-    font-size: 0.8rem;
-    margin-bottom: 12px;
-}
-.match-panel.has-match,
-.match-panel.is-unknown {
-    background: var(--warning-bg);
-    border-color: var(--warning-border);
-    color: var(--warning-ink);
-}
 .recorded-allergens {
-    padding: 28px 0 22px;
+    padding: 8px 0 22px;
 }
 .recorded-allergens h2 {
-    font-size: 0.92rem;
+    font-size: 1.1rem;
 }
 .recorded-allergens h2 > span {
     font-size: 0.74rem;
@@ -955,13 +935,21 @@ body.shopper-app {
     margin-left: 10px;
 }
 .recorded-allergens p {
-    font-size: 0.83rem;
+    font-size: 0.95rem;
 }
-.detail-chips > span {
-    font-size: 0.85rem;
-    padding: 8px 13px;
+/* The allergen names are the answer shoppers came for, so they are the largest text after the product name. */
+.detail-chips {
+    gap: 10px;
+}
+.allergen-chips.detail-chips > span {
+    font-size: 1.3rem;
+    font-weight: 700;
+    padding: 10px 20px;
+    border-radius: 12px;
 }
 .unknown-message {
+    font-size: 1.15rem;
+    font-weight: 700;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1712,10 +1700,6 @@ body.shopper-app {
         bottom: 22px;
         font-size: 0.9rem;
     }
-    .detail-chips > span {
-        font-size: 0.85rem;
-        padding: 8px 13px;
-    }
     .preferences-layout {
         grid-template-columns: 1fr;
         gap: 20px;
@@ -1883,4 +1867,125 @@ body.shopper-app {
     object-fit: contain;
     border-radius: 16px;
     filter: drop-shadow(0 18px 10px #25362a1a);
+}
+/* Phone layout: keep the main action and the allergen answer near the top of the screen, and keep text readable. */
+@media (max-width: 760px) {
+    .site-header {
+        padding: 12px 16px;
+    }
+    .shop-brand {
+        font-size: 1.3rem;
+    }
+    .shop-brand-mark {
+        padding: 7px;
+    }
+    .safety-notice {
+        margin: 10px 16px 0;
+        padding: 9px 12px;
+        gap: 9px;
+        font-size: 0.72rem;
+        line-height: 1.45;
+    }
+    .safety-notice svg {
+        width: 16px;
+    }
+    .shop-main {
+        padding-inline: 16px;
+    }
+    /* Japanese headings break only between phrases, not inside words like 「スキャン」. */
+    .hero-copy h1,
+    .page-heading h1,
+    .detail-copy h1,
+    .section-heading h2 {
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+        text-wrap: balance;
+    }
+    .discovery-hero {
+        padding: 22px 0 18px;
+    }
+    .hero-copy h1 {
+        font-size: 2.15rem;
+        line-height: 1.2;
+        margin: 12px 0;
+    }
+    .hero-actions {
+        margin-top: 16px;
+    }
+    .page-heading {
+        padding: 22px 0 14px;
+    }
+    .page-heading h1 {
+        font-size: 1.9rem;
+        line-height: 1.25;
+    }
+    /* The camera opens in its own window, so the decorative frame is hidden and the button stays on screen. */
+    .scan-panel {
+        padding: 18px 16px;
+    }
+    .scan-viewfinder {
+        display: none;
+    }
+    .auth-panel {
+        margin: 24px auto 40px;
+    }
+    .auth-panel h1 {
+        font-size: 2rem;
+        line-height: 1.25;
+        word-break: keep-all;
+        overflow-wrap: anywhere;
+    }
+    .back-link {
+        margin: 14px 0;
+    }
+    .product-detail {
+        gap: 18px;
+    }
+    .detail-art {
+        min-height: 0;
+        aspect-ratio: auto;
+        height: 240px;
+    }
+    .detail-art-caption {
+        display: none;
+    }
+    .detail-photo {
+        max-height: 200px;
+        margin-bottom: 0;
+    }
+    .detail-emoji {
+        font-size: 5.5rem;
+    }
+    .detail-copy h1 {
+        font-size: 1.85rem;
+        line-height: 1.25;
+    }
+    /* Smallest readable sizes for labels, chips and captions. */
+    .section-kicker,
+    .product-category,
+    .record-label,
+    .product-ja,
+    .info-unknown,
+    .no-listed,
+    .allergen-chips > span,
+    .hero-features > span,
+    .subtle-pill {
+        font-size: max(0.7rem, 11px);
+    }
+    .sample-label {
+        font-size: max(0.6rem, 10px);
+        padding: 3px 6px;
+    }
+    .primary-nav a {
+        padding-inline: 4px;
+        font-size: max(0.7rem, 11px);
+        white-space: nowrap;
+    }
+    /* iPhone zooms into inputs smaller than 16px when they are tapped. */
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea,
+    .catalog-search input {
+        font-size: 16px;
+    }
 }

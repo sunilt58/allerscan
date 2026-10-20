@@ -173,17 +173,6 @@ svg.icon {
 .button.secondary:hover {
     background: var(--mint);
 }
-.button.needs-attention {
-    border-color: var(--amber);
-    color: var(--amber);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--amber) 25%, transparent);
-    animation: attention-pulse 1.6s ease-in-out infinite;
-}
-@keyframes attention-pulse {
-    50% {
-        box-shadow: 0 0 0 7px color-mix(in srgb, var(--amber) 10%, transparent);
-    }
-}
 .wide {
     width: 100%;
 }

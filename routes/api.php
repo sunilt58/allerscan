@@ -25,7 +25,7 @@ Route::prefix('v1')->name('api.v1.')->middleware('throttle:60,1')->group(functio
         Route::put('/me/preferences', [AccountController::class, 'updatePreferences'])->name('me.preferences');
         Route::get('/me/saved-products', [AccountController::class, 'savedProducts'])->name('me.saved-products');
         Route::delete('/me', [AccountController::class, 'destroy'])->name('me.destroy');
-        Route::get('/me/suggestions', [SuggestionController::class, 'index'])->name('me.suggestions');
-        Route::post('/suggestions', [SuggestionController::class, 'store'])->middleware('throttle:10,1')->name('suggestions.store');
+        Route::get('/me/suggestions', [SuggestionController::class, 'index'])->middleware('suggestions')->name('me.suggestions');
+        Route::post('/suggestions', [SuggestionController::class, 'store'])->middleware(['suggestions', 'throttle:10,1'])->name('suggestions.store');
     });
 });

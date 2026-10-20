@@ -310,41 +310,63 @@ function applyShopperPreferences() {
             ? t(":count of your selected allergens listed", { count: matches })
             : "";
     });
-    const detail = document.querySelector("[data-product-detail]");
-    if (!detail) return;
-    const panel = detail.querySelector("[data-match-panel]");
-    const matches = [
-        ...detail.querySelectorAll("[data-allergen-code].is-match"),
-    ];
-    const unknown = detail.dataset.information !== "recorded";
-    panel.classList.toggle("is-unknown", unknown);
-    panel.classList.toggle("has-match", !unknown && matches.length > 0);
-    const title = panel.querySelector("[data-match-title]");
-    const message = panel.querySelector("[data-match-message]");
-    if (unknown) {
-        title.textContent = t("Allergen information is unconfirmed");
-        message.textContent = t(
-            "Your preferences cannot be checked against an unconfirmed record. Check the actual packaging or manufacturer information.",
-        );
-    } else if (!codes.length) {
-        title.textContent = t("Make these details personal.");
-        message.textContent = t(
-            "Select your allergens in Settings to highlight matches.",
-        );
-    } else if (matches.length) {
-        title.textContent = t("Selected allergens are listed");
-        message.textContent = matches
-            .map((chip) => chip.dataset.name)
-            .join(t(", "));
-    } else {
-        title.textContent = t("No selected allergens listed in this record");
-        message.textContent = t(
-            "This does not confirm absence. Records may be incomplete; check the actual packaging.",
-        );
-    }
 }
 window.addEventListener("preferences-updated", applyShopperPreferences);
 applyShopperPreferences();
+// Catalog results update while the shopper types, without waiting for the Search button.
+// Japanese input waits until the IME conversion is confirmed.
+const catalogSearch = document.querySelector(".catalog-search");
+const catalogResults = document.querySelector("[data-catalog-results]");
+if (catalogSearch && catalogResults) {
+    const input = catalogSearch.querySelector('input[name="q"]');
+    let composing = false;
+    let timer;
+    let request;
+    const updateResults = async () => {
+        const url = new URL(catalogSearch.action);
+        url.hash = "";
+        for (const [key, value] of new FormData(catalogSearch)) {
+            if (String(value).trim()) url.searchParams.set(key, value);
+        }
+        request?.abort();
+        request = new AbortController();
+        try {
+            const response = await fetch(url, { signal: request.signal });
+            if (!response.ok) return;
+            const page = new DOMParser().parseFromString(
+                await response.text(),
+                "text/html",
+            );
+            const results = page.querySelector("[data-catalog-results]");
+            if (!results) return;
+            catalogResults.innerHTML = results.innerHTML;
+            const count = page.querySelector("[data-product-count]");
+            if (count)
+                document.querySelector("[data-product-count]").textContent =
+                    count.textContent;
+            history.replaceState(
+                null,
+                "",
+                `${url.pathname}${url.search}#catalog`,
+            );
+            applyShopperPreferences();
+        } catch {
+            /* Aborted by newer typing, or offline: the Search button still works. */
+        }
+    };
+    const scheduleUpdate = () => {
+        clearTimeout(timer);
+        timer = setTimeout(updateResults, 250);
+    };
+    input.addEventListener("compositionstart", () => (composing = true));
+    input.addEventListener("compositionend", () => {
+        composing = false;
+        scheduleUpdate();
+    });
+    input.addEventListener("input", () => {
+        if (!composing) scheduleUpdate();
+    });
+}
 for (const input of document.querySelectorAll("[data-allergen-choice]")) {
     input.addEventListener("change", () => {
         savePreferences({
@@ -449,7 +471,7 @@ function stopSpeech() {
     currentUtterance = null;
 }
 // onBlocked runs when the browser refuses to speak without a tap (for example iPhone Safari after a scan).
-function speakMessage(message, lang, voice = null, onBlocked = null) {
+function speakMessage(message, lang, voice = null) {
     const status = document.querySelector("[data-speech-status]");
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) {
         if (status)
@@ -464,34 +486,21 @@ function speakMessage(message, lang, voice = null, onBlocked = null) {
     utterance.voice = voice || pickVoice(lang);
     utterance.rate = 0.95;
     currentUtterance = utterance;
-    let started = false;
-    utterance.onstart = () => {
-        started = true;
-        document
-            .querySelectorAll("[data-read-product].needs-attention")
-            .forEach((button) => button.classList.remove("needs-attention"));
-    };
     utterance.onend = () => {
         if (currentUtterance === utterance) {
             currentUtterance = null;
             if (status) status.textContent = t("Finished reading.");
         }
     };
-    utterance.onerror = (event) => {
+    utterance.onerror = () => {
         if (currentUtterance !== utterance) return;
-        if (event.error === "not-allowed" && onBlocked) onBlocked();
-        else if (status)
+        if (status)
             status.textContent = t(
                 "Unable to read aloud. Try another voice in Settings.",
             );
     };
     if (status) status.textContent = t("Reading product information…");
     speechTimer = setTimeout(() => speechSynthesis.speak(utterance), 100);
-    // Some browsers stay silent without any event when speech is blocked.
-    if (onBlocked)
-        setTimeout(() => {
-            if (!started && currentUtterance === utterance) onBlocked();
-        }, 2500);
 }
 for (const button of document.querySelectorAll("[data-read-product]")) {
     button.addEventListener("click", () => {
@@ -546,41 +555,30 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
                 ? "記録にないアレルゲンが含まれる可能性があります。必ず実際の商品表示とメーカー情報を確認してください。"
                 : "Records may be incomplete. This does not mean allergen-free. Always check the actual package label and manufacturer information.",
         );
-        speakMessage(parts.join(". "), lang, null, button.onSpeechBlocked);
-        button.onSpeechBlocked = null;
+        speakMessage(parts.join(". "), lang);
     });
 }
-// After a lookup from the Scan page, read the product aloud in the display language.
-const autoReadKey = "allerscan-auto-read";
-function takeAutoReadRequest() {
+// After a lookup from the Scan page, open the product page at its photo, past the header and safety notice.
+const scannedKey = "allerscan-scanned";
+function takeScannedRequest() {
     try {
-        const requestedAt = Number(sessionStorage.getItem(autoReadKey));
-        sessionStorage.removeItem(autoReadKey);
+        const requestedAt = Number(sessionStorage.getItem(scannedKey));
+        sessionStorage.removeItem(scannedKey);
         return requestedAt > 0 && Date.now() - requestedAt < 60000;
     } catch {
         return false;
     }
 }
-if (document.querySelector("[data-product-detail]") && takeAutoReadRequest()) {
-    const lang = document.documentElement.lang === "en" ? "en" : "ja";
-    const button = document.querySelector(`[data-read-product="${lang}"]`);
-    if (button) {
-        button.onSpeechBlocked = () => {
-            stopSpeech();
-            button.classList.add("needs-attention");
-            button.scrollIntoView({ block: "center", behavior: "smooth" });
-            const status = document.querySelector("[data-speech-status]");
-            if (status)
-                status.textContent = t("Tap the button to hear the allergens.");
-        };
-        button.click();
-    }
+if (takeScannedRequest()) {
+    document
+        .querySelector("[data-product-detail]")
+        ?.scrollIntoView({ block: "start" });
 }
 document.getElementById("barcode-form")?.addEventListener("submit", () => {
     try {
-        sessionStorage.setItem(autoReadKey, String(Date.now()));
+        sessionStorage.setItem(scannedKey, String(Date.now()));
     } catch {
-        /* Without storage the product page simply doesn't read aloud by itself. */
+        /* Without storage the product page simply opens at the top. */
     }
 });
 document.querySelector("[data-stop-speech]")?.addEventListener("click", () => {
@@ -591,6 +589,143 @@ document.querySelector("[data-stop-speech]")?.addEventListener("click", () => {
 
 let scannerControls = null;
 let cameraGeneration = 0;
+// Barcodes on Japanese products (JAN/EAN, UPC), plus Code 128 and Code 39 for printed sample labels.
+const retailFormats = ["ean_13", "ean_8", "upc_a", "upc_e"];
+const scanFormats = [...retailFormats, "code_128", "code_39"];
+// DecodeHintType.POSSIBLE_FORMATS from @zxing/library, which @zxing/browser does not re-export.
+const zxingPossibleFormats = 2;
+// ZXing reads a barcode tilted up to about 20°, so turning each frame by the next of these angles reads any angle.
+const zxingAngles = [0, 45, 90, 135];
+/**
+ * Returns a function that reads one barcode from the video, or null. The browser's own detector
+ * (Android Chrome and others) is fast and reads any angle. Otherwise ZXing reads each frame turned
+ * by the next angle in zxingAngles. Its own "try harder" rotation is not used: it does not rotate canvases.
+ */
+async function createBarcodeDetector() {
+    if ("BarcodeDetector" in window) {
+        try {
+            const supported =
+                await window.BarcodeDetector.getSupportedFormats();
+            const formats = scanFormats.filter((format) =>
+                supported.includes(format),
+            );
+            if (formats.includes("ean_13")) {
+                const detector = new window.BarcodeDetector({ formats });
+                return async (video) => {
+                    const [code] = await detector.detect(video);
+                    return code
+                        ? {
+                              text: code.rawValue.trim(),
+                              isRetail: retailFormats.includes(code.format),
+                          }
+                        : null;
+                };
+            }
+        } catch {
+            /* Fall back to ZXing below. */
+        }
+    }
+    const { BrowserMultiFormatOneDReader, BarcodeFormat } =
+        await import("@zxing/browser");
+    const zxingRetail = [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+    ];
+    const reader = new BrowserMultiFormatOneDReader(
+        new Map([
+            [
+                zxingPossibleFormats,
+                [...zxingRetail, BarcodeFormat.CODE_128, BarcodeFormat.CODE_39],
+            ],
+        ]),
+    );
+    const canvas = document.createElement("canvas");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    let frame = 0;
+    return async (video) => {
+        const { videoWidth: width, videoHeight: height } = video;
+        if (!width || !height) return null;
+        // A square from the middle of the picture, scaled down for speed.
+        const side = Math.min(width, height);
+        const size = Math.min(side, 800);
+        canvas.width = canvas.height = size;
+        context.translate(size / 2, size / 2);
+        context.rotate(
+            (zxingAngles[frame++ % zxingAngles.length] * Math.PI) / 180,
+        );
+        context.drawImage(
+            video,
+            (width - side) / 2,
+            (height - side) / 2,
+            side,
+            side,
+            -size / 2,
+            -size / 2,
+            size,
+            size,
+        );
+        try {
+            const result = reader.decodeFromCanvas(canvas);
+            return {
+                text: result.getText().trim(),
+                isRetail: zxingRetail.includes(result.getBarcodeFormat()),
+            };
+        } catch {
+            return null;
+        }
+    };
+}
+/**
+ * Starts the rear camera in HD with continuous focus and reads every frame until a barcode is found.
+ * Retail barcodes carry a check digit, so one read is enough; other formats must read the same twice.
+ */
+async function startBarcodeScan(video, generation, onBarcode) {
+    const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+        },
+        audio: false,
+    });
+    if (generation !== cameraGeneration) {
+        stream.getTracks().forEach((track) => track.stop());
+        return null;
+    }
+    video.srcObject = stream;
+    stream
+        .getVideoTracks()[0]
+        ?.applyConstraints({ advanced: [{ focusMode: "continuous" }] })
+        .catch(() => {});
+    await video.play();
+    const detect = await createBarcodeDetector();
+    const nextFrame = (callback) =>
+        video.requestVideoFrameCallback
+            ? video.requestVideoFrameCallback(callback)
+            : requestAnimationFrame(callback);
+    let stopped = false;
+    let previous = "";
+    const scanFrame = async () => {
+        if (stopped || generation !== cameraGeneration) return;
+        const found = await detect(video).catch(() => null);
+        if (stopped || generation !== cameraGeneration) return;
+        if (found?.text && (found.isRetail || found.text === previous)) {
+            stopped = true;
+            onBarcode(found.text);
+            return;
+        }
+        previous = found?.text ?? "";
+        nextFrame(scanFrame);
+    };
+    nextFrame(scanFrame);
+    return {
+        stop() {
+            stopped = true;
+        },
+    };
+}
 function stopCamera() {
     cameraGeneration++;
     scannerControls?.stop();
@@ -624,24 +759,14 @@ document.addEventListener("click", async (event) => {
         return;
     }
     try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        if (generation !== cameraGeneration) return;
-        const reader = new BrowserMultiFormatReader();
-        const controls = await reader.decodeFromConstraints(
-            { video: { facingMode: "environment" }, audio: false },
-            video,
-            (result, error, controls) => {
-                if (!result || handled || generation !== cameraGeneration)
-                    return;
-                handled = true;
-                controls.stop();
-                dialog.close();
-                document.getElementById(target.input).value = result
-                    .getText()
-                    .trim();
-                document.getElementById(target.form).requestSubmit();
-            },
-        );
+        const controls = await startBarcodeScan(video, generation, (code) => {
+            if (handled) return;
+            handled = true;
+            dialog.close();
+            document.getElementById(target.input).value = code;
+            document.getElementById(target.form).requestSubmit();
+        });
+        if (!controls) return;
         if (generation !== cameraGeneration || !dialog.open) {
             controls.stop();
             return;

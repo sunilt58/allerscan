@@ -39,9 +39,11 @@ class DatabaseSeeder extends Seeder
             ['DEMO009', '季節のサラダ', 'Seasonal salad', '1 bowl', 'Food', '🥗', 320, null],
             ['DEMO010', 'ハンドソープ', 'Hand soap', '250 ml', 'Daily', '🧴', 380, null],
         ];
+        // Readings for names written in kanji, so a search in hiragana also finds them.
+        $keywords = ['DEMO002' => 'しょくぱん', 'DEMO004' => 'りょくちゃ おちゃ', 'DEMO009' => 'きせつ'];
         foreach ($samples as [$barcode, $ja, $en, $size, $category, $icon, $price, $codes]) {
             $product = Product::firstOrCreate(['barcode' => $barcode], [
-                'name_ja' => $ja, 'name_en' => $en, 'size' => $size, 'category' => $category, 'icon' => $icon,
+                'name_ja' => $ja, 'name_en' => $en, 'keywords' => $keywords[$barcode] ?? null, 'size' => $size, 'category' => $category, 'icon' => $icon,
                 'price' => $price, 'tax_rate' => $category === 'Daily' ? 10 : 8, 'is_demo' => true,
                 'information_status' => $codes === null ? 'unknown' : 'recorded',
                 'source' => 'Sample record — not a real product label',

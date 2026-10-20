@@ -14,6 +14,9 @@ return [
     // Sends X-Robots-Tag: noindex. Turn off once the catalog is ready for search engines.
     'noindex' => (bool) env('APP_NOINDEX', env('DEMO_NOINDEX', true)),
 
+    // The shopper suggestion box and its team review page. Off for now; saved suggestions are kept.
+    'suggestions' => (bool) env('SUGGESTIONS_ENABLED', false),
+
     // Shown on the Privacy & terms page.
     'contact_email' => env('CONTACT_EMAIL'),
 ];

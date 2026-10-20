@@ -107,6 +107,7 @@ class ApiTest extends TestCase
 
     public function test_the_app_can_send_suggestions_and_follow_them(): void
     {
+        config(['allerscan.suggestions' => true]);
         $this->seed();
         Sanctum::actingAs($user = User::factory()->create());
         $this->postJson('/api/v1/suggestions', ['type' => 'product', 'barcode' => '4901234567894', 'name_ja' => '新しい商品', 'allergen_codes' => ['wheat']])

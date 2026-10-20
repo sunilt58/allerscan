@@ -1,4 +1,13 @@
 import { defineConfig } from "@playwright/test";
+import { readFileSync } from "node:fs";
+
+// The team account's password comes from the local .env (ADMIN_PASSWORD), so it isn't written in the tests.
+try {
+    const match = readFileSync(".env", "utf8").match(/^ADMIN_PASSWORD=(.*)$/m);
+    process.env.ADMIN_PASSWORD ??= match?.[1].trim().replace(/^["']|["']$/g, "");
+} catch {
+    /* Without .env the default from .env.example is used. */
+}
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "https://allerscan.test";
 

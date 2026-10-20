@@ -16,7 +16,7 @@ Route::middleware('cache.headers:no_store;private')->group(function () {
     Route::view('/saved', 'saved')->name('saved');
     Route::get('/saved/items', [CatalogController::class, 'saved'])->name('saved.items');
     Route::view('/privacy', 'privacy')->name('privacy');
-    Route::get('/suggest', [SuggestionController::class, 'index'])->name('suggest');
+    Route::get('/suggest', [SuggestionController::class, 'index'])->middleware('suggestions')->name('suggest');
     Route::get('/settings', fn () => view('settings', ['allergens' => Allergen::all()]))->name('settings');
 });
 
@@ -31,9 +31,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::middleware('can:manage-catalog')->prefix('admin')->group(function () {
         Route::view('/products', 'admin.products')->name('products');
-        Route::view('/suggestions', 'admin.suggestions')->name('admin.suggestions');
+        Route::view('/suggestions', 'admin.suggestions')->middleware('suggestions')->name('admin.suggestions');
     });
-    Route::post('/suggest', [SuggestionController::class, 'store'])->middleware('throttle:10,1')->name('suggest.store');
+    Route::post('/suggest', [SuggestionController::class, 'store'])->middleware(['suggestions', 'throttle:10,1'])->name('suggest.store');
     Route::put('/account/preferences', [AccountController::class, 'updatePreferences'])->middleware('throttle:60,1')->name('account.preferences');
     Route::delete('/account', [AccountController::class, 'destroy'])->middleware('throttle:10,1')->name('account.destroy');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');

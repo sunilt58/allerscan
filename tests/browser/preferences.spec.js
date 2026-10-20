@@ -52,9 +52,7 @@ test("themes synchronize tabs, survive navigation, and preserve voice and access
         ),
     ).toEqual({ ja: "saved-ja", en: "saved-en" });
     await page.reload();
-    await expect(
-        page.getByRole("radio", { name: "Midnight" }),
-    ).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Midnight" })).toBeChecked();
     await expect(
         page.getByRole("checkbox", { name: "Milk", exact: false }),
     ).toBeChecked();
@@ -86,9 +84,7 @@ test("invalid preferences and blocked browser storage recover with an honest sav
         localStorage.setItem("allerscan-display-preferences", "null"),
     );
     await page.reload();
-    await expect(
-        page.getByRole("radio", { name: "Forest" }),
-    ).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Forest" })).toBeChecked();
     await page.evaluate(() =>
         localStorage.setItem(
             "allerscan-display-preferences",
@@ -101,9 +97,7 @@ test("invalid preferences and blocked browser storage recover with an honest sav
         ),
     );
     await page.reload();
-    await expect(
-        page.getByRole("radio", { name: "Forest" }),
-    ).toBeChecked();
+    await expect(page.getByRole("radio", { name: "Forest" })).toBeChecked();
     await expect(
         page.getByRole("checkbox", { name: "High contrast", exact: true }),
     ).toBeChecked();

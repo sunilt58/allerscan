@@ -54,18 +54,47 @@ class Product extends Model
         $query->where('is_active', true);
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product): void {
+            $product->search_text = static::searchTextFor($product->name_ja, $product->name_en, $product->keywords, $product->barcode);
+        });
+    }
+
     /**
-     * Match a Japanese or English name, or an exact barcode.
+     * Writes text the same way however it was typed: hiragana as katakana, half-width kana and
+     * full-width letters and digits as their usual width, lower case, and without spaces, symbols or ー.
+     */
+    public static function normalizeForSearch(string $text): string
+    {
+        $text = mb_strtolower(mb_convert_kana($text, 'KVasC'));
+
+        return preg_replace('/[\s\p{P}\p{S}ー]+/u', '', $text) ?? '';
+    }
+
+    /**
+     * The stored search key for a product's names, search keywords and barcode.
+     */
+    public static function searchTextFor(?string $nameJa, ?string $nameEn, ?string $keywords, ?string $barcode): string
+    {
+        return static::normalizeForSearch(implode(' ', array_filter([$nameJa, $nameEn, $keywords, $barcode])));
+    }
+
+    /**
+     * Match products whose names, keywords or barcode contain every word of the search, in any order and
+     * however each word is written (see normalizeForSearch).
      *
      * @param  Builder<Product>  $query
      */
     public function scopeMatching(Builder $query, string $search): void
     {
-        $query->where(function (Builder $query) use ($search) {
-            $query->where('name_ja', 'like', '%'.$search.'%')
-                ->orWhere('name_en', 'like', '%'.$search.'%')
-                ->orWhere('barcode', $search);
-        });
+        $words = array_filter(array_map(
+            static::normalizeForSearch(...),
+            preg_split('/[\s　]+/u', $search) ?: [],
+        ));
+        foreach ($words as $word) {
+            $query->where('search_text', 'like', '%'.$word.'%');
+        }
     }
 
     public function allergens(): BelongsToMany

@@ -101,8 +101,8 @@ class ProductManager extends Component
         $this->removePhoto = false;
         $product = $id ? Product::with('allergens')->findOrFail($id) : null;
         $this->productId = $id;
-        $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
-            'barcode' => '', 'name_ja' => '', 'name_en' => '', 'size' => '', 'category' => 'Food',
+        $this->form = $product ? $product->only(['barcode', 'name_ja', 'name_en', 'keywords', 'size', 'category', 'icon', 'information_status', 'source', 'is_demo']) + ['verified_at' => $product->verified_at?->format('Y-m-d')] : [
+            'barcode' => '', 'name_ja' => '', 'name_en' => '', 'keywords' => '', 'size' => '', 'category' => 'Food',
             'icon' => '📦', 'information_status' => 'unknown',
             'source' => '', 'verified_at' => '', 'is_demo' => false,
         ];
@@ -182,6 +182,7 @@ class ProductManager extends Component
             'form.barcode' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9-]+$/', Rule::unique('products', 'barcode')->ignore($this->productId)],
             'form.name_ja' => ['required', 'string', 'max:255'],
             'form.name_en' => ['required', 'string', 'max:255'],
+            'form.keywords' => ['nullable', 'string', 'max:255'],
             'form.size' => ['required', 'string', 'max:100'],
             'form.category' => ['required', Rule::in(['Food', 'Drinks', 'Snacks', 'Daily'])],
             'form.icon' => ['required', Rule::in(['📦', '🥛', '🍞', '🍙', '🍵', '🍫', '🍜', '🍎', '🍪', '🧃', '🥗', '🧴'])],
@@ -195,7 +196,7 @@ class ProductManager extends Component
             'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ]);
         // Livewire bypasses ConvertEmptyStringsToNull, and MySQL rejects '' for a DATE column.
-        foreach (['source', 'verified_at'] as $optionalField) {
+        foreach (['keywords', 'source', 'verified_at'] as $optionalField) {
             $validated['form'][$optionalField] = $validated['form'][$optionalField] ?: null;
         }
         $newPhoto = $this->photo?->store('products', 'public');
@@ -247,6 +248,7 @@ class ProductManager extends Component
             'form.barcode' => __('Barcode'),
             'form.name_ja' => __('Japanese name'),
             'form.name_en' => __('English name'),
+            'form.keywords' => __('Search keywords'),
             'form.size' => __('Size'),
             'form.category' => __('Category'),
             'form.icon' => __('Icon'),
@@ -270,9 +272,8 @@ class ProductManager extends Component
 
     public function render()
     {
-        $products = Product::with('allergens')->where(function ($q) {
-            $q->where('name_ja', 'like', '%'.$this->search.'%')->orWhere('name_en', 'like', '%'.$this->search.'%')->orWhere('barcode', 'like', '%'.$this->search.'%');
-        })->orderByDesc('is_active')->orderBy('id')->paginate(15);
+        $products = Product::with('allergens')->matching($this->search)
+            ->orderByDesc('is_active')->orderBy('id')->paginate(15);
 
         return view('livewire.product-manager', ['products' => $products, 'allergens' => Allergen::all()]);
     }

@@ -37,8 +37,6 @@ test("Japanese is the default and the header switch changes page and script text
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
         "まいにちミルク",
     );
-    await expect(page.locator("[data-match-title]")).toHaveText(
-        "あなた向けに表示しましょう。",
-    );
+    await expect(page.locator("[data-save-label]")).toHaveText("商品を保存");
     expect(errors).toEqual([]);
 });

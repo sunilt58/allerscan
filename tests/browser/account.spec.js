@@ -49,8 +49,9 @@ test("an account carries allergens and saved products to another device, and del
         "Your account is ready",
     );
     await merged;
-    await expect(page.getByText(`Signed in as Browser Test (${email}).`))
-        .toBeVisible();
+    await expect(
+        page.getByText(`Signed in as Browser Test (${email}).`),
+    ).toBeVisible();
 
     // A change made while signed in is saved to the account.
     const synced = page.waitForResponse(

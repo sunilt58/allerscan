@@ -1,6 +1,6 @@
 @props(['title'])
 @php($otherLocale = app()->getLocale() === 'en' ? 'ja' : 'en')
-@php($pendingSuggestions = \App\Models\Suggestion::pending()->count())
+@php($pendingSuggestions = config('allerscan.suggestions') ? \App\Models\Suggestion::pending()->count() : 0)
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
@@ -22,7 +22,7 @@
         <p class="workspace-label">{{ __('WORKSPACE') }}</p>
         <nav aria-label="{{ __('Team navigation') }}">
             <a class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}" href="{{ route('products') }}" @if(request()->routeIs('products')) aria-current="page" @endif><x-icon name="box"/><span>{{ __('Products') }}</span></a>
-            <a class="nav-link {{ request()->routeIs('admin.suggestions') ? 'active' : '' }}" href="{{ route('admin.suggestions') }}" @if(request()->routeIs('admin.suggestions')) aria-current="page" @endif><x-icon name="inbox"/><span>{{ __('Suggestions') }}</span>@if($pendingSuggestions)<b class="nav-badge" aria-label="{{ trans_choice('{1} :count suggestion waiting for review|[2,*] :count suggestions waiting for review', $pendingSuggestions, ['count' => $pendingSuggestions]) }}">{{ $pendingSuggestions }}</b>@endif</a>
+            @if(config('allerscan.suggestions'))<a class="nav-link {{ request()->routeIs('admin.suggestions') ? 'active' : '' }}" href="{{ route('admin.suggestions') }}" @if(request()->routeIs('admin.suggestions')) aria-current="page" @endif><x-icon name="inbox"/><span>{{ __('Suggestions') }}</span>@if($pendingSuggestions)<b class="nav-badge" aria-label="{{ trans_choice('{1} :count suggestion waiting for review|[2,*] :count suggestions waiting for review', $pendingSuggestions, ['count' => $pendingSuggestions]) }}">{{ $pendingSuggestions }}</b>@endif</a>@endif
             <a class="nav-link" href="{{ route('discover') }}"><x-icon name="home"/><span>{{ __('View shopper site') }}</span></a>
         </nav>
         <div class="staff">
