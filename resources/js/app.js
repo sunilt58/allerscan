@@ -508,7 +508,8 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
         const lang = button.dataset.readProduct;
         const isJa = lang === "ja";
         const chips = [...detail.querySelectorAll("[data-allergen-code]")];
-        const unknown = detail.dataset.information !== "recorded";
+        const aiDraft = detail.dataset.information === "ai_draft";
+        const unknown = !aiDraft && detail.dataset.information !== "recorded";
         const names = chips.map((chip) =>
             isJa ? chip.dataset.nameJa : chip.dataset.nameEn,
         );
@@ -527,6 +528,20 @@ for (const button of document.querySelectorAll("[data-read-product]")) {
                 isJa
                     ? "アレルゲン情報は未確認です。"
                     : "Allergen information is unconfirmed.",
+            );
+        else if (aiDraft)
+            // An AI estimate is never read out as "no allergens".
+            parts.push(
+                names.length
+                    ? (isJa
+                          ? "AIが推定したアレルゲンは、"
+                          : "Allergens estimated by AI: ") + names.join(", ")
+                    : isJa
+                      ? "AIではアレルゲンが見つかりませんでした。"
+                      : "AI did not find any allergens.",
+                isJa
+                    ? "これはチームが確認する前の、AIによる推定です。"
+                    : "This is an AI estimate that our team has not checked yet.",
             );
         else {
             parts.push(

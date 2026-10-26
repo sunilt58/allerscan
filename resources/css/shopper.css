@@ -1989,3 +1989,106 @@ body.shopper-app {
         font-size: 16px;
     }
 }
+/* AI research for unregistered barcodes, and products that are AI estimates waiting for the team. */
+.ai-pending {
+    max-width: 680px;
+    display: grid;
+    gap: 18px;
+    padding-bottom: 30px;
+}
+.ai-status {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+.ai-status > svg {
+    flex: none;
+    width: 22px;
+    color: var(--warning-ink);
+}
+.ai-status strong {
+    font-size: 1.05rem;
+}
+.ai-status p {
+    margin: 6px 0 0;
+    color: var(--muted);
+}
+.ai-spinner {
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 3px solid var(--line);
+    border-top-color: var(--green);
+    border-radius: 50%;
+    animation: ai-spin 0.9s linear infinite;
+}
+@keyframes ai-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+.ai-pending .notice.warning,
+.ai-notice {
+    background: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    color: var(--warning-ink);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 0;
+}
+.ai-notice {
+    margin-bottom: 14px;
+}
+.ai-notice strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1rem;
+}
+.ai-notice strong svg {
+    width: 18px;
+}
+.ai-notice p {
+    margin: 6px 0 0;
+}
+.ai-label {
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+}
+.ai-label h2 {
+    font-size: 1.15rem;
+    margin: 0 0 8px;
+}
+.ai-label form {
+    display: grid;
+    gap: 10px;
+}
+.ai-label .button {
+    justify-self: start;
+}
+.ai-sources {
+    margin: 6px 0 0;
+    padding-left: 18px;
+}
+.record-label.ai-label-text,
+.badge.ai {
+    color: var(--warning-ink);
+    background: var(--warning-bg);
+}
+.record-label.ai-label-text {
+    border-radius: 5px;
+    padding: 2px 6px;
+    font-weight: 700;
+}
+@media (prefers-reduced-motion: reduce) {
+    .ai-spinner {
+        animation: none;
+        border-top-color: var(--line);
+    }
+}

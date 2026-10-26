@@ -133,97 +133,113 @@ test("catalog results update while typing a partial name", async ({ page }) => {
     await expect(cards.filter({ hasText: "Green tea" })).toHaveCount(1);
 });
 
-test("the camera reads JAN barcodes held at any angle", async ({ page }) => {
-    // Without the browser's own detector, as on iPhone, so the ZXing reader is what gets tested.
-    await page.addInitScript(() => {
-        delete window.BarcodeDetector;
-        const digits = "4901234567894";
-        const left = [
-            "0001101",
-            "0011001",
-            "0010011",
-            "0111101",
-            "0100011",
-            "0110001",
-            "0101111",
-            "0111011",
-            "0110111",
-            "0001011",
-        ];
-        const even = [
-            "0100111",
-            "0110011",
-            "0011011",
-            "0100001",
-            "0011101",
-            "0111001",
-            "0000101",
-            "0010001",
-            "0001001",
-            "0010111",
-        ];
-        const right = [
-            "1110010",
-            "1100110",
-            "1101100",
-            "1000010",
-            "1011100",
-            "1001110",
-            "1010000",
-            "1000100",
-            "1001000",
-            "1110100",
-        ];
-        const parity = [
-            "LLLLLL",
-            "LLGLGL",
-            "LLGGLG",
-            "LLGGGL",
-            "LGLLGG",
-            "LGGLLG",
-            "LGGGLL",
-            "LGLGLG",
-            "LGLGGL",
-            "LGGLGL",
-        ][digits[0]];
-        let bits = "101";
-        for (let i = 1; i <= 6; i++)
-            bits += (parity[i - 1] === "L" ? left : even)[digits[i]];
-        bits += "01010";
-        for (let i = 7; i <= 12; i++) bits += right[digits[i]];
-        bits += "101";
-        // A fake camera showing the barcode turned by window.barcodeAngle degrees.
-        navigator.mediaDevices.getUserMedia = async () => {
-            const canvas = document.createElement("canvas");
-            canvas.width = 1280;
-            canvas.height = 720;
-            const context = canvas.getContext("2d");
-            const draw = () => {
-                context.setTransform(1, 0, 0, 1, 0, 0);
-                context.fillStyle = "#fff";
-                context.fillRect(0, 0, 1280, 720);
-                context.translate(640, 360);
-                context.rotate(((window.barcodeAngle ?? 0) * Math.PI) / 180);
-                context.fillStyle = "#000";
-                [...bits].forEach((bit, index) => {
-                    if (bit === "1")
-                        context.fillRect(index * 3 - 142, -60, 3, 120);
-                });
+test.describe("camera scanning", () => {
+    // The offline service worker would answer the lookup before page.route() could.
+    test.use({ serviceWorkers: "block" });
+
+    test("the camera reads JAN barcodes held at any angle", async ({
+        page,
+    }) => {
+        // Without the browser's own detector, as on iPhone, so the ZXing reader is what gets tested.
+        await page.addInitScript(() => {
+            delete window.BarcodeDetector;
+            const digits = "4901234567894";
+            const left = [
+                "0001101",
+                "0011001",
+                "0010011",
+                "0111101",
+                "0100011",
+                "0110001",
+                "0101111",
+                "0111011",
+                "0110111",
+                "0001011",
+            ];
+            const even = [
+                "0100111",
+                "0110011",
+                "0011011",
+                "0100001",
+                "0011101",
+                "0111001",
+                "0000101",
+                "0010001",
+                "0001001",
+                "0010111",
+            ];
+            const right = [
+                "1110010",
+                "1100110",
+                "1101100",
+                "1000010",
+                "1011100",
+                "1001110",
+                "1010000",
+                "1000100",
+                "1001000",
+                "1110100",
+            ];
+            const parity = [
+                "LLLLLL",
+                "LLGLGL",
+                "LLGGLG",
+                "LLGGGL",
+                "LGLLGG",
+                "LGGLLG",
+                "LGGGLL",
+                "LGLGLG",
+                "LGLGGL",
+                "LGGLGL",
+            ][digits[0]];
+            let bits = "101";
+            for (let i = 1; i <= 6; i++)
+                bits += (parity[i - 1] === "L" ? left : even)[digits[i]];
+            bits += "01010";
+            for (let i = 7; i <= 12; i++) bits += right[digits[i]];
+            bits += "101";
+            // A fake camera showing the barcode turned by window.barcodeAngle degrees.
+            navigator.mediaDevices.getUserMedia = async () => {
+                const canvas = document.createElement("canvas");
+                canvas.width = 1280;
+                canvas.height = 720;
+                const context = canvas.getContext("2d");
+                const draw = () => {
+                    context.setTransform(1, 0, 0, 1, 0, 0);
+                    context.fillStyle = "#fff";
+                    context.fillRect(0, 0, 1280, 720);
+                    context.translate(640, 360);
+                    context.rotate(
+                        ((window.barcodeAngle ?? 0) * Math.PI) / 180,
+                    );
+                    context.fillStyle = "#000";
+                    [...bits].forEach((bit, index) => {
+                        if (bit === "1")
+                            context.fillRect(index * 3 - 142, -60, 3, 120);
+                    });
+                };
+                draw();
+                setInterval(draw, 50);
+                return canvas.captureStream(20);
             };
-            draw();
-            setInterval(draw, 50);
-            return canvas.captureStream(20);
-        };
-    });
-    for (const angle of [0, 30, 45, 90, 135, 160]) {
-        await page.goto("/scan");
-        await page.evaluate((angle) => (window.barcodeAngle = angle), angle);
-        const lookup = page.waitForRequest((request) =>
-            request.url().includes("/scan/lookup?barcode=4901234567894"),
+        });
+        // Only the request matters here; answering it locally keeps a real barcode away from AI research.
+        await page.route("**/scan/lookup?**", (route) =>
+            route.fulfill({ status: 200, body: "ok" }),
         );
-        await page.getByRole("button", { name: "Open camera" }).click();
-        await lookup;
-    }
+        for (const angle of [0, 30, 45, 90, 135, 160]) {
+            await page.goto("/scan");
+            await page.evaluate(
+                (angle) => (window.barcodeAngle = angle),
+                angle,
+            );
+            const lookup = page.waitForRequest((request) =>
+                request.url().includes("/scan/lookup?barcode=4901234567894"),
+            );
+            await page.getByRole("button", { name: "Open camera" }).click();
+            await lookup;
+        }
+    });
 });
 
 test("saved lists recover after a network failure and synchronize across tabs", async ({

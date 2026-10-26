@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Free tier: Google Search grounding is free only on Gemini 2.5 Flash (500 requests a day).
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'search_model' => env('GEMINI_SEARCH_MODEL', 'gemini-2.5-flash'),
+        'label_model' => env('GEMINI_LABEL_MODEL', 'gemini-3.8-flash'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

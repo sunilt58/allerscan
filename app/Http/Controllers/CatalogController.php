@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\UnregisteredProductLookup;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,10 +27,17 @@ class CatalogController extends Controller
         return view('discover', compact('products', 'search', 'category'));
     }
 
-    public function lookup(Request $request): RedirectResponse
+    /**
+     * A barcode that is not in the catalog starts AI research, when it is turned on and within today's limits.
+     * Archived products are not researched: the team took them out on purpose.
+     */
+    public function lookup(Request $request, UnregisteredProductLookup $lookups): RedirectResponse
     {
         $validated = $request->validate(['barcode' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9-]+$/']]);
         $product = Product::where('is_active', true)->where('barcode', $validated['barcode'])->first();
+        if (! $product && ! Product::where('barcode', $validated['barcode'])->exists() && $lookups->lookupFor($validated['barcode'], $request)) {
+            return redirect()->route('scan.pending', ['barcode' => $validated['barcode']]);
+        }
         if (! $product) {
             return redirect()->route('scan')->withInput()->withErrors([
                 'barcode' => __('Product not found in our catalog. Try searching by name.'),

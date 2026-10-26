@@ -13,7 +13,8 @@ class ProductResource extends JsonResource
 {
     /**
      * Both language names are included so the app can switch language without another request.
-     * `information_status` is "recorded" or "unknown": an unknown record must never be shown as allergen-free.
+     * `information_status` is "recorded", "unknown", or "ai_draft" (an AI estimate our team hasn't checked:
+     * show its allergens with a warning). Neither an unknown record nor an AI draft may be shown as allergen-free.
      *
      * @return array<string, mixed>
      */
@@ -31,6 +32,7 @@ class ProductResource extends JsonResource
             'information_status' => $this->information_status,
             'allergens' => AllergenResource::collection($this->whenLoaded('allergens')),
             'source' => $this->source,
+            'ai_sources' => $this->ai_sources ?? [],
             'verified_at' => $this->verified_at?->toDateString(),
             'is_sample' => $this->is_demo,
             'url' => route('catalog.show', $this->resource),

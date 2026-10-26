@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountController;
+use App\Http\Controllers\AiLookupController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\LanguageController;
@@ -12,6 +13,7 @@ Route::middleware('cache.headers:no_store;private')->group(function () {
     Route::get('/', [CatalogController::class, 'index'])->name('discover');
     Route::view('/scan', 'scan')->name('scan');
     Route::get('/scan/lookup', [CatalogController::class, 'lookup'])->name('scan.lookup');
+    Route::get('/scan/pending/{barcode}', [AiLookupController::class, 'show'])->where('barcode', '[A-Za-z0-9-]{1,50}')->name('scan.pending');
     Route::get('/item/{product}', [CatalogController::class, 'show'])->name('catalog.show');
     Route::view('/saved', 'saved')->name('saved');
     Route::get('/saved/items', [CatalogController::class, 'saved'])->name('saved.items');
@@ -34,6 +36,7 @@ Route::middleware('auth')->group(function () {
         Route::view('/suggestions', 'admin.suggestions')->middleware('suggestions')->name('admin.suggestions');
     });
     Route::post('/suggest', [SuggestionController::class, 'store'])->middleware(['suggestions', 'throttle:10,1'])->name('suggest.store');
+    Route::post('/scan/pending/{barcode}/label', [AiLookupController::class, 'storeLabel'])->where('barcode', '[A-Za-z0-9-]{1,50}')->middleware('throttle:10,1')->name('scan.label');
     Route::put('/account/preferences', [AccountController::class, 'updatePreferences'])->middleware('throttle:60,1')->name('account.preferences');
     Route::delete('/account', [AccountController::class, 'destroy'])->middleware('throttle:10,1')->name('account.destroy');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');

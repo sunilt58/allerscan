@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
@@ -20,6 +21,20 @@ class ProductManager extends Component
     use WithFileUploads, WithPagination;
 
     public string $search = '';
+
+    /**
+     * "ai" lists only products registered by AI that wait for the team's check.
+     */
+    #[Url]
+    public string $filter = '';
+
+    /**
+     * Pages the AI draft being edited was based on, shown for the review.
+     *
+     * @var list<array{title: string, url: string}>
+     */
+    #[Locked]
+    public array $aiSources = [];
 
     public bool $editing = false;
 
@@ -92,6 +107,11 @@ class ProductManager extends Component
         $this->resetPage();
     }
 
+    public function updatedFilter(): void
+    {
+        $this->resetPage();
+    }
+
     public function edit(?int $id = null): void
     {
         $this->resetValidation();
@@ -108,6 +128,7 @@ class ProductManager extends Component
         ];
         $this->allergenIds = $product ? $product->allergens->pluck('id')->all() : [];
         $this->currentPhotoUrl = $product?->image_url;
+        $this->aiSources = $product?->ai_sources ?? [];
         $this->editing = true;
     }
 
@@ -186,7 +207,7 @@ class ProductManager extends Component
             'form.size' => ['required', 'string', 'max:100'],
             'form.category' => ['required', Rule::in(['Food', 'Drinks', 'Snacks', 'Daily'])],
             'form.icon' => ['required', Rule::in(['📦', '🥛', '🍞', '🍙', '🍵', '🍫', '🍜', '🍎', '🍪', '🧃', '🥗', '🧴'])],
-            'form.information_status' => ['required', Rule::in(['unknown', 'recorded'])],
+            'form.information_status' => ['required', Rule::in(['unknown', 'ai_draft', 'recorded'])],
             'form.source' => ['nullable', 'required_if:form.information_status,recorded', 'string', 'max:255'],
             'form.verified_at' => ['nullable', 'required_if:form.information_status,recorded', 'date', 'before_or_equal:today'],
             'form.is_demo' => ['required', 'boolean'],
@@ -273,6 +294,7 @@ class ProductManager extends Component
     public function render()
     {
         $products = Product::with('allergens')->matching($this->search)
+            ->when($this->filter === 'ai', fn ($query) => $query->where('information_status', 'ai_draft'))
             ->orderByDesc('is_active')->orderBy('id')->paginate(15);
 
         return view('livewire.product-manager', ['products' => $products, 'allergens' => Allergen::all()]);

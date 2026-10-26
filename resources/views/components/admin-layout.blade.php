@@ -1,6 +1,7 @@
 @props(['title'])
 @php($otherLocale = app()->getLocale() === 'en' ? 'ja' : 'en')
 @php($pendingSuggestions = config('allerscan.suggestions') ? \App\Models\Suggestion::pending()->count() : 0)
+@php($aiDrafts = \App\Models\Product::where('information_status', 'ai_draft')->count())
 <!DOCTYPE html>
 <html lang="{{ app()->getLocale() }}">
 <head>
@@ -21,7 +22,7 @@
         <a class="brand" href="{{ route('products') }}" aria-label="{{ __('AllerScan team') }}"><span class="brand-mark"><x-icon name="scan"/></span><span><span class="brand-name">Aller<span class="brand-light">Scan</span></span><small>{{ __('CATALOG TEAM') }}</small></span></a>
         <p class="workspace-label">{{ __('WORKSPACE') }}</p>
         <nav aria-label="{{ __('Team navigation') }}">
-            <a class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}" href="{{ route('products') }}" @if(request()->routeIs('products')) aria-current="page" @endif><x-icon name="box"/><span>{{ __('Products') }}</span></a>
+            <a class="nav-link {{ request()->routeIs('products') ? 'active' : '' }}" href="{{ route('products') }}" @if(request()->routeIs('products')) aria-current="page" @endif><x-icon name="box"/><span>{{ __('Products') }}</span>@if($aiDrafts)<b class="nav-badge" aria-label="{{ trans_choice('{1} :count AI product waiting for review|[2,*] :count AI products waiting for review', $aiDrafts, ['count' => $aiDrafts]) }}">{{ $aiDrafts }}</b>@endif</a>
             @if(config('allerscan.suggestions'))<a class="nav-link {{ request()->routeIs('admin.suggestions') ? 'active' : '' }}" href="{{ route('admin.suggestions') }}" @if(request()->routeIs('admin.suggestions')) aria-current="page" @endif><x-icon name="inbox"/><span>{{ __('Suggestions') }}</span>@if($pendingSuggestions)<b class="nav-badge" aria-label="{{ trans_choice('{1} :count suggestion waiting for review|[2,*] :count suggestions waiting for review', $pendingSuggestions, ['count' => $pendingSuggestions]) }}">{{ $pendingSuggestions }}</b>@endif</a>@endif
             <a class="nav-link" href="{{ route('discover') }}"><x-icon name="home"/><span>{{ __('View shopper site') }}</span></a>
         </nav>
@@ -40,6 +41,9 @@
             </div>
         </header>
         <main id="main" class="admin-main">
+            @if($aiDrafts && request('filter') !== 'ai')
+                <a class="notice warning review-notice" href="{{ route('products', ['filter' => 'ai']) }}"><x-icon name="info"/><span><strong>{{ trans_choice('{1} :count AI product waiting for review|[2,*] :count AI products waiting for review', $aiDrafts, ['count' => $aiDrafts]) }}</strong> {{ __('AI registered these from shoppers’ scans. Check each against the package label.') }}</span><span class="review-notice-link">{{ __('Review now') }} <x-icon name="arrow"/></span></a>
+            @endif
             @if($pendingSuggestions && ! request()->routeIs('admin.suggestions'))
                 <a class="notice warning review-notice" href="{{ route('admin.suggestions') }}"><x-icon name="inbox"/><span><strong>{{ trans_choice('{1} :count suggestion waiting for review|[2,*] :count suggestions waiting for review', $pendingSuggestions, ['count' => $pendingSuggestions]) }}</strong> {{ __('Shoppers asked for new products or allergens.') }}</span><span class="review-notice-link">{{ __('Review now') }} <x-icon name="arrow"/></span></a>
             @endif

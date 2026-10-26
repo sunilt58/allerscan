@@ -2,18 +2,32 @@
 
 namespace App\Models;
 
+use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
+    /** @use HasFactory<ProductFactory> */
+    use HasFactory;
+
     protected $guarded = [];
 
     protected function casts(): array
     {
-        return ['price' => 'integer', 'tax_rate' => 'integer', 'is_demo' => 'boolean', 'is_active' => 'boolean', 'verified_at' => 'date'];
+        return ['price' => 'integer', 'tax_rate' => 'integer', 'is_demo' => 'boolean', 'is_active' => 'boolean', 'verified_at' => 'date', 'ai_sources' => 'array'];
+    }
+
+    /**
+     * Registered by AI from the web or a label photo and not yet checked by the team. Its allergens are
+     * shown with a warning and an empty list never means allergen-free.
+     */
+    public function isAiDraft(): bool
+    {
+        return $this->information_status === 'ai_draft';
     }
 
     /**
